@@ -1,0 +1,163 @@
+#!/usr/bin/python3
+
+import sys, subprocess, tempfile, os
+import numpy as np
+
+defaults = {
+    "diameter": 25 / 1000,
+    "losses": 0,
+    "loading": 0,
+    "segments": 21
+}
+
+def run_process(text):
+    name = tempfile.mktemp()
+    command = 'nec2c -i %s -o /dev/stdout' % name
+    with open(name, "wb") as f:
+        f.write(text.encode()) 
+    proc = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+    result = proc.stdout.read().decode()
+    proc.wait()
+    os.unlink(name)
+    return result
+
+
+def run_nec(text):
+    tag = None
+    im = []
+    buf = run_process(text)
+    f = iter(buf.splitlines())
+    for line in f:
+        data = line.split()
+        if len(data) == 10 and data[0].isdigit() and '.' in line: break
+    while True:
+        data = line.split() 
+        if not len(data): break
+        x = np.complex(float(data[6]), float(data[7]))
+        if tag != data[1]:
+            im.append(x)
+            tag = data[1]
+        line = next(f)
+    return im
+
+
+def generate_input(data, voltages):
+    frequency = data["frequency"]
+    elements = data['elements']
+    height = data['height']
+    radius = data["diameter"] / 2
+    losses = data["losses"]
+    loading = data["loading"]
+    segments = data["segments"]
+    text = ""
+    n = len(elements)
+    for i in range(n):
+        tag = i + 1
+        fmt = "GW {tag} {segments} {x:g} {y:g} 0 {x:g} {y:g} {height} {radius}\n"
+        text += fmt.format(tag=tag, segments=segments, 
+                           x=elements[i][0], y=elements[i][1], 
+                           height=height, radius=radius)
+    text += "GE 1\n"  # ground plane is present
+    text += "GN 1\n"  # perfect ground
+    text += "FR 0 0 0 0 {:f}\n".format(frequency)
+    for i in range(n):
+        tag = i + 1
+        text += "LD 4 {:d} 1 1 {:f} {:f}\n".format(tag, losses, loading)
+    for i in range(n):
+        tag = i + 1
+        text += "EX 0 {:d} 1 0 {:g} {:g}\n".format(tag, voltages[i].real, voltages[i].imag)
+    text += "XQ\n"
+    text += "EN\n"
+    return text
+
+
+def analyze(data):
+ 
+    # autoload
+    ii = run_nec(generate_input(dict(data, **{ "elements": [(0,0)] }), [1]))
+    zself = 1 / ii[0]
+
+    if data.get('autoload'):
+        print('! auto loading vertical  : {:.4f}j'.format(-zself.imag))
+        data["loading"] = -zself.imag
+        ii = run_nec(generate_input(dict(data, **{ "elements": [(0,0)] }), [1]))
+        zself = 1 / ii[0]
+
+    print("! element self impedance : {:.4f}".format(zself))
+
+    # calculate mutual impedance
+
+    n = len(data["elements"])
+    zij = np.zeros((n,n), dtype=np.complex)
+    for k in range(n):
+        ei = np.ones(n) * 1e-20
+        ei[k] = 1
+        ii = run_nec(generate_input(data, ei))
+        zij[:,k] = ii
+    zij = np.array(np.linalg.inv(np.matrix(zij)))
+
+    # find error norm
+
+    ii = np.ones(n)
+    ei = zij * np.matrix(ii).T
+    ei = np.array(ei).T[0]
+    err = ii - run_nec(generate_input(data, ei))
+    print('! current error norm     : {:g}'.format(np.linalg.norm(err)))
+
+    # output touchstone file
+
+    print("# MHZ Z RI")
+    print('{:<8g}'.format(data["frequency"]), end="")
+    for i, x in enumerate(zij.flatten()):
+        if i > 0 and n > 2 and i % n == 0: print("\n        ", end="")
+        print(' {:8.4f} {:8.4f}'.format(x.real, x.imag), end="")
+    print()
+
+
+def measure(buf):
+    buf = buf.strip()
+    if len(buf) > 2:
+        suffix = buf[-2:]
+        s = buf[:-2]
+        if suffix == 'cm':
+            return np.float(s) * .01
+        if suffix == 'mm':
+            return np.float(s) * .001
+        if suffix == 'in':
+            return np.float(s) * .0254
+        if suffix == 'ft':
+            return np.float(s) * .3048
+    return np.float(buf)
+    
+   
+def main(*args):
+    args = list(args)
+    kw = { "elements": [] }
+    while args:
+        opt = args.pop(0)
+        if opt == '-autoload':
+            kw["autoload"] = True
+        elif opt == '-freq':
+            kw["frequency"] = np.float(args.pop(0))
+        elif opt == '-loss':
+            kw["losses"] = np.float(args.pop(0))
+        elif opt == '-load':
+            kw["loading"] = np.float(args.pop(0))
+        elif opt == '-seg':
+            kw["segments"] = np.int(args.pop(0))
+        elif opt == '-height':
+            kw["height"] = measure(args.pop(0))
+        elif opt == '-diam':
+            kw["diameter"] = measure(args.pop(0))
+        elif opt == '-el':
+            kw["elements"].append([ measure(x) for x in args.pop(0).split(',') ])
+        else:
+            raise ValueError
+
+    np.set_printoptions(precision=3)
+    kw = dict(defaults, **kw)
+    analyze(kw)
+
+
+main(*sys.argv[1:])
+
