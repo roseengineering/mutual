@@ -107,6 +107,7 @@ def analyze(data):
     # output touchstone file
 
     print("# MHZ Z RI")
+    if n == 2: print("!             Z11               Z12               Z21               Z22")
     print('{:<8g}'.format(data["frequency"]), end="")
     for i, x in enumerate(zij.flatten()):
         if i > 0 and n > 2 and i % n == 0: print("\n        ", end="")

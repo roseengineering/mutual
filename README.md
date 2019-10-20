@@ -43,6 +43,7 @@ $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0
 ! element self impedance : 36.3204+1.8171j
 ! current error norm     : 5.06585e-05
 # MHZ Z RI
+!             Z11               Z12               Z21               Z22
 3.8       35.7663   1.6553  19.1265 -15.6098  19.1265 -15.6098  35.7663   1.6553
 ```
 
@@ -69,6 +70,7 @@ $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 130ft,0
 ! element self impedance : 36.3204+1.8171j
 ! current error norm     : 3.52974e-06
 # MHZ Z RI
+!             Z11               Z12               Z21               Z22
 3.8       36.5277   1.9638  -7.4151 -14.2346  -7.4151 -14.2346  36.5277   1.9638
 ```
 
@@ -126,6 +128,7 @@ $ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0
 ! element self impedance : 45.2009+1.1565j
 ! current error norm     : 1.5132e-05
 # MHZ Z RI
+!             Z11               Z12               Z21               Z22
 7.1       44.5846   1.0047  18.6465 -15.8822  18.6465 -15.8822  44.5846   1.0047
 ```
 
