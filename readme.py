@@ -19,7 +19,6 @@ mutual
 
 Python 3 script for finding the mutual impedance 
 matrix for a vertical antenna array.
-
 The script requires the numpy library.  It also
 requires the nec2c binary to be installed.
 
@@ -73,6 +72,11 @@ Triangular array, 0.289 wave spacing
 4-square array, 1/8-wave spacing
 
 { run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 32ft,0 -el 0,32ft -el 32ft,32ft") }
+
+Two element base-fed array from Orr and Cowan, Vertical Antenna Handbook p148-150 based on
+W7EL's design in August 1979 QST.  A ground loss of 9 ohms was assumed.
+
+{ run("mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0") }
 
 """)
 
