@@ -143,11 +143,11 @@ The Orr design above but solving with element currents using / notation.  (Use /
 
 
 ```
-$ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -currents 1,1/90
+$ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -currents 1,1/-90
 ! MHZ Z RI R 1
-7.1       60.4668  19.6511  28.7024 -17.6418
-! E in RA notation =  63.5799  18.0037  33.6906  58.4232
-! I in RA notation =   1.0000   0.0000   1.0000  90.0000
+7.1       28.7024 -17.6418  60.4668  19.6511
+! E in RA notation =  33.6906 -31.5768  63.5799 -71.9963
+! I in RA notation =   1.0000   0.0000   1.0000 -90.0000
 ! Z in parallel    =  23.2125  -6.1608j
 ```
 
@@ -156,26 +156,16 @@ $ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -curr
 
 
 ```
-$ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -currents 1,j
+$ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -currents 1,-j
 ! MHZ Z RI R 1
-7.1       60.4668  19.6511  28.7024 -17.6418
-! E in RA notation =  63.5799  18.0037  33.6906  58.4232
-! I in RA notation =   1.0000   0.0000   1.0000  90.0000
+7.1       28.7024 -17.6418  60.4668  19.6511
+! E in RA notation =  33.6906 -31.5768  63.5799 -71.9963
+! I in RA notation =   1.0000   0.0000   1.0000 -90.0000
 ! Z in parallel    =  23.2125  -6.1608j
 ```
 
 
 The Orr design above with the Christman matching transmission lines.
-
-
-```
-$ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -currents 1,1/-90 -tlines 75/90.64,75/176.205
-! MHZ Z RI R 1
-7.1      145.9689  86.2965  58.5139  17.5013
-! E in RA notation =  75.1931  90.2443  62.0860 103.6427
-! I in RA notation =   0.4434  59.6528   1.0166  86.9910
-! Z in parallel    =  42.3487  15.6908j
-```
 
 
 ```

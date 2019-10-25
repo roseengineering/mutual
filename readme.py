@@ -87,11 +87,11 @@ The Orr design above but for multiple frequencies.
 
 The Orr design above but solving with element currents using / notation.  (Use / between the magnitude and the angle in degrees).
 
-{ run("mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -currents 1,1/90") }
+{ run("mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -currents 1,1/-90") }
 
 ... or using j notation for the complex currents.
 
-{ run("mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -currents 1,j") }
+{ run("mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -currents 1,-j") }
 
 The Orr design above with the Christman matching transmission lines.
 
