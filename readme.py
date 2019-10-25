@@ -42,8 +42,8 @@ The program takes the following command line options:
 -autoload  : automatically tune the self impedance of the vertical antennas
 -debug     : show the current error norm when simulating the array
 -el        : x,y location of a vertical antenna element
--currents  : list of antenna elements currents j or / complex notation (solves for Zi)
--tlines    : list of transmission lines in j or / complex notation (when solving for Zi)
+-currents  : list of antenna elements currents j or / complex notation
+-tlines    : list of transmission lines in j or / complex notation (used with currents)
 ```
 
 Note the -diam, -height, and -el options can take the following suffix modifiers:
@@ -85,7 +85,7 @@ The Orr design above but for multiple frequencies.
 
 { run("mutual -loss 9 -diam .7in -height 33.4ft -freq 7.0,7.1,7.2,7.3 -el 0,0 -el 35.14ft,0") }
 
-The Orr design above but for multiple frequencies.
+The Orr design above but solving with element currents.
 
 { run("mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -currents 1,1/90") }
 
