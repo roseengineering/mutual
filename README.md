@@ -192,6 +192,19 @@ $ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -curr
 ```
 
 
+The Orr desgin above but with 90 degree transmission lines to the elements.
+
+
+```
+$ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -currents 1,-j -tlines 75/90,75/90
+! MHZ Z RI R 1
+7.1      142.2399 +87.4274j  84.1395 -27.3445j
+! E in MA notation =  75.0000  90.0000   75.0000  -0.0000 
+! I in MA notation =   0.4492  58.4232    0.8477  18.0037 
+! Z in parallel    =  63.0503  -1.4208j
+```
+
+
 The Orr design above but 20 feet high and "autoloaded".
 
 

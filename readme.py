@@ -102,6 +102,10 @@ The Orr design above with the Christman matching transmission lines.
 
 { run("mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -currents 1,-j -tlines 75/23.19ft,75/45.10ft") }
 
+The Orr desgin above but with 90 degree transmission lines to the elements.
+
+{ run("mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -currents 1,-j -tlines 75/90,75/90") }
+
 The Orr design above but 20 feet high and "autoloaded".
 
 { run("mutual -loss 9 -diam .7in -height 20ft -freq 7.1 -el 0,0 -el 35.14ft,0 -autoload") }
