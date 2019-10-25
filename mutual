@@ -198,11 +198,11 @@ def main(*args):
             for x in zi:
                 print(' {:8.4f} {:+8.4f}j'.format(x.real, x.imag), end="")
             print()
-            print('! E in RA notation =', end="")
+            print('! E in MA notation =', end="")
             for x in ei:
                 print(' {:8.4f} {:8.4f} '.format(np.abs(x), np.rad2deg(np.angle(x))), end="")
             print()
-            print('! I in RA notation =', end="")
+            print('! I in MA notation =', end="")
             for x in ii:
                 print(' {:8.4f} {:8.4f} '.format(np.abs(x), np.rad2deg(np.angle(x))), end="")
             print()
