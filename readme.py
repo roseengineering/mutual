@@ -85,11 +85,11 @@ The Orr design above but for multiple frequencies.
 
 { run("mutual -loss 9 -diam .7in -height 33.4ft -freq 7.0,7.1,7.2,7.3 -el 0,0 -el 35.14ft,0") }
 
-The Orr design above but solving with element currents.
+The Orr design above but solving with element currents using / notation.  (Use / between the magnitude and the angle in degrees).
 
 { run("mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -currents 1,1/90") }
 
-... or using complex notation for the currents.
+... or using j notation for the complex currents.
 
 { run("mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -currents 1,j") }
 
