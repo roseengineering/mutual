@@ -79,7 +79,7 @@ def solve(zij, ii):
 def autoload(data):
     ii = run_nec(generate_input(dict(data, **{ "elements": [(0,0)] }), [1]))
     zself = 1 / ii[0]
-    print('! auto loading vertical  = {:.4f}j at {:g} MHz'.format(-zself.imag, data["frequency"]))
+    print('! autoloading base = {:.4f}j at {:g} MHz'.format(-zself.imag, data["frequency"]))
     data["loading"] = -zself.imag
 
 
