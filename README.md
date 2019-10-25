@@ -140,7 +140,7 @@ $ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.0,7.1,7.2,7.3 -el 0,0 -el 35.
 ```
 
 
-The Orr design above but solving with element currents using / notation.  (Use / between the magnitude and the angle in degrees).
+The Orr design above but solving with element currents using / complex notation.  (Use a / between the magnitude and the angle in degrees).
 
 
 ```
@@ -192,7 +192,7 @@ $ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -curr
 ```
 
 
-The Orr desgin above but with 90 degree transmission lines to the elements.
+The Orr desgin above but with 90 degree transmission lines to the elements for current forcing.
 
 
 ```
