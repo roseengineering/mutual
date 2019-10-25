@@ -35,11 +35,11 @@ The program takes the following command line options:
 ```
 -freq      : simulation frequency (or frequencies) in megahertz 
 -loss      : vertical antenna resistive loss
--load      : vertical antenna loading impedance
+-load      : vertical antenna base loading impedance
 -diam      : vertical antenna diameter
 -height    : vertical antenna height
 -segs      : number of segments to divide the simulated vertical into
--autoload  : automatically tune the self impedance of the vertical antennas
+-autoload  : automatically base load the element vertical antenna
 -debug     : show the current error norm when simulating the array
 -el        : x,y location of a vertical antenna element
 -currents  : list of antenna elements currents j or / complex notation
