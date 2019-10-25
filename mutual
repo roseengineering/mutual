@@ -194,6 +194,10 @@ def main(*args):
             for x in ei:
                 print(' {:8.4f} {:8.4f}'.format(np.abs(x), np.rad2deg(np.angle(x))), end="")
             print()
+            print('! I in RA notation =', end="")
+            for x in ii:
+                print(' {:8.4f} {:8.4f}'.format(np.abs(x), np.rad2deg(np.angle(x))), end="")
+            print()
             x = parallel(zi)
             print('! Z in parallel    = {:8.4f} {:8.4f}j'.format(x.real, x.imag))
         else:
