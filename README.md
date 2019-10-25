@@ -30,6 +30,7 @@ The program takes the following command line options:
 -el        : x,y location of a vertical antenna element
 -currents  : list of antenna elements currents j or / complex notation
 -tlines    : list of transmission lines in j or / complex notation (used with currents)
+-vf        : velocity factor of the transmission line if angle given in feet or meters
 ```
 
 Note the -diam, -height, and -el options can take the following suffix modifiers:
@@ -178,6 +179,19 @@ $ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -curr
 ```
 
 
+... or using feet instead of degrees.
+
+
+```
+$ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -currents 1,-j -tlines 75/23.19ft,75/45.10ft
+! MHZ Z RI R 1
+7.1      149.5365 +85.0475j  59.1250 +18.2238j
+! E in RA notation =  75.3683  90.4743   62.5679 105.1016 
+! I in RA notation =   0.4381  60.8456    1.0113  87.9709 
+! Z in parallel    =  42.8408 +15.9557j
+```
+
+
 The Orr design above but 20 feet high and "autoloaded".
 
 
@@ -187,6 +201,49 @@ $ mutual -loss 9 -diam .7in -height 20ft -freq 7.1 -el 0,0 -el 35.14ft,0 -autolo
 ! autoload vertical base = 256.2944j at 7.1 MHz
 7.1       18.6136  -0.0069j   5.2691  -4.7229j
            5.2691  -4.7229j  18.6136  -0.0069j
+```
+
+
+All designs from Orr on page 149.
+
+
+```
+$ mutual -loss 9 -diam .7in -freq 3.6  -height 66.8ft -el 0,0 -el 70.28ft,0 -currents 1,-j -tlines 75/46.39ft,75/92.77ft
+! MHZ Z RI R 1
+3.6      179.3650 +51.4636j  66.4021 +29.2599j
+! E in RA notation =  75.4356  90.9908   70.2040 118.1315 
+! I in RA notation =   0.4043  74.9815    0.9675  94.3509 
+! Z in parallel    =  48.6652 +19.2746j
+```
+
+
+```
+$ mutual -loss 9 -diam .7in -freq 7.1  -height 33.4ft -el 0,0 -el 35.14ft,0 -currents 1,-j -tlines 75/23.19ft,75/45.10ft
+! MHZ Z RI R 1
+7.1      149.5365 +85.0475j  59.1250 +18.2238j
+! E in RA notation =  75.3683  90.4743   62.5679 105.1016 
+! I in RA notation =   0.4381  60.8456    1.0113  87.9709 
+! Z in parallel    =  42.8408 +15.9557j
+```
+
+
+```
+$ mutual -loss 9 -diam .7in -freq 10.1 -height 23.2ft -el 0,0 -el 24.36ft,0 -currents 1,-j -tlines 75/16.07ft,75/32.15ft
+! MHZ Z RI R 1
+10.1     120.4103 +97.3445j  58.8678 +14.1678j
+! E in RA notation =  74.9791  89.9803   60.5585 103.4938 
+! I in RA notation =   0.4842  51.0268    1.0002  89.9617 
+! Z in parallel    =  41.5647 +15.6262j
+```
+
+
+```
+$ mutual -loss 9 -diam .7in -freq 14.1 -height 16.7ft -el 0,0 -el 17.57ft,0 -currents 1,-j -tlines 75/11.60ft,75/22.55ft
+! MHZ Z RI R 1
+14.1     142.6727 +89.7992j  58.3616 +16.4840j
+! E in RA notation =  75.2037  90.2424   61.5930 102.7736 
+! I in RA notation =   0.4461  58.0558    1.0156  87.0015 
+! Z in parallel    =  42.2217 +15.4461j
 ```
 
 

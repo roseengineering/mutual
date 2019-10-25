@@ -7,7 +7,8 @@ defaults = {
     "diameter": 25 / 1000,
     "losses": 0,
     "loading": 0,
-    "segments": 21
+    "segments": 21,
+    "vf": .66
 }
 
 def run_process(text):
@@ -33,7 +34,7 @@ def run_nec(text):
     while True:
         data = line.split() 
         if not len(data): break
-        x = np.complex(float(data[6]), float(data[7]))
+        x = np.complex(np.double(data[6]), np.double(data[7]))
         if tag != data[1]:
             im.append(x)
             tag = data[1]
@@ -95,10 +96,16 @@ def mutual(data):
     return zij
 
 
-def to_complex(buf):
+def to_complex(buf, f=None, vf=None):
     buf = buf.strip()
     if '/' in buf:
         r, theta = buf.split('/')
+        if theta[-2:] == 'ft':
+            theta = np.double(theta[:-2]) * .3048
+            theta = 360 * theta / vf / (300 / f)
+        elif theta[-1:] == 'm':
+            theta = np.double(theta[:-1])
+            theta = 360 * theta / vf / (300 / f)
         return np.double(r) * np.exp(1j * np.deg2rad(np.double(theta)))
     else:
         return np.complex(buf)
@@ -110,14 +117,14 @@ def to_distance(buf):
         suffix = buf[-2:]
         s = buf[:-2]
         if suffix == 'cm':
-            return np.float(s) * .01
+            return np.double(s) * .01
         if suffix == 'mm':
-            return np.float(s) * .001
+            return np.double(s) * .001
         if suffix == 'in':
-            return np.float(s) * .0254
+            return np.double(s) * .0254
         if suffix == 'ft':
-            return np.float(s) * .3048
-    return np.float(buf)
+            return np.double(s) * .3048
+    return np.double(buf)
     
 
 def parallel(*zi):
@@ -142,11 +149,11 @@ def main(*args):
         elif opt == '-autoload':
             kw["autoload"] = True
         elif opt == '-freq':
-            kw["frequencies"] = [ np.float(x) for x in args.pop(0).split(',') ]
+            kw["frequencies"] = [ np.double(x) for x in args.pop(0).split(',') ]
         elif opt == '-loss':
-            kw["losses"] = np.float(args.pop(0))
+            kw["losses"] = np.double(args.pop(0))
         elif opt == '-load':
-            kw["loading"] = np.float(args.pop(0))
+            kw["loading"] = np.double(args.pop(0))
         elif opt == '-segs':
             kw["segments"] = np.int(args.pop(0))
         elif opt == '-height':
@@ -158,9 +165,9 @@ def main(*args):
         elif opt == '-currents':
             kw["currents"] = [ to_complex(x) for x in args.pop(0).split(',') ]
         elif opt == '-tlines':
-            kw["tlines"] = [ to_complex(x) for x in args.pop(0).split(',') ]
-        elif opt == '-angle':
-            kw["angle"] = True
+            kw["tlines"] = args.pop(0).split(',')
+        elif opt == '-vf':
+            kw["vf"] = np.double(args.pop(0))
         else:
             raise ValueError
 
@@ -185,6 +192,7 @@ def main(*args):
             ii = np.array(kw["currents"])
             ei = solve(zij, ii)
             for i, x in enumerate(kw["tlines"]):
+                x = to_complex(x, f=freq, vf=kw["vf"])
                 ei[i], ii[i] = solve(tline(np.rad2deg(np.angle(x)), zo=np.abs(x)), [ei[i], ii[i]])
             zi = ei / ii
             for x in zi:

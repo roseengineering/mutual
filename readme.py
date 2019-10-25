@@ -44,6 +44,7 @@ The program takes the following command line options:
 -el        : x,y location of a vertical antenna element
 -currents  : list of antenna elements currents j or / complex notation
 -tlines    : list of transmission lines in j or / complex notation (used with currents)
+-vf        : velocity factor of the transmission line if angle given in feet or meters
 ```
 
 Note the -diam, -height, and -el options can take the following suffix modifiers:
@@ -97,9 +98,20 @@ The Orr design above with the Christman matching transmission lines.
 
 { run("mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -currents 1,-j -tlines 75/90.64,75/176.205") }
 
+... or using feet instead of degrees.
+
+{ run("mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -currents 1,-j -tlines 75/23.19ft,75/45.10ft") }
+
 The Orr design above but 20 feet high and "autoloaded".
 
 { run("mutual -loss 9 -diam .7in -height 20ft -freq 7.1 -el 0,0 -el 35.14ft,0 -autoload") }
+
+All designs from Orr on page 149.
+
+{ run("mutual -loss 9 -diam .7in -freq 3.6  -height 66.8ft -el 0,0 -el 70.28ft,0 -currents 1,-j -tlines 75/46.39ft,75/92.77ft") }
+{ run("mutual -loss 9 -diam .7in -freq 7.1  -height 33.4ft -el 0,0 -el 35.14ft,0 -currents 1,-j -tlines 75/23.19ft,75/45.10ft") }
+{ run("mutual -loss 9 -diam .7in -freq 10.1 -height 23.2ft -el 0,0 -el 24.36ft,0 -currents 1,-j -tlines 75/16.07ft,75/32.15ft") }
+{ run("mutual -loss 9 -diam .7in -freq 14.1 -height 16.7ft -el 0,0 -el 17.57ft,0 -currents 1,-j -tlines 75/11.60ft,75/22.55ft") }
 
 """)
 
