@@ -188,7 +188,7 @@ def main(*args):
                 ei[i], ii[i] = solve(tline(np.rad2deg(np.angle(x)), zo=np.abs(x)), [ei[i], ii[i]])
             zi = ei / ii
             for x in zi:
-                print(' {:8.4f} {:8.4f}j'.format(x.real, x.imag), end="")
+                print(' {:8.4f} {:+8.4f}j'.format(x.real, x.imag), end="")
             print()
             print('! E in RA notation =', end="")
             for x in ei:
@@ -203,7 +203,7 @@ def main(*args):
         else:
             for i, x in enumerate(zij.flatten()):
                 if i > 0 and i % n == 0: print("\n        ", end="")
-                print(' {:8.4f} {:8.4f}j'.format(x.real, x.imag), end="")
+                print(' {:8.4f} {:+8.4f}j'.format(x.real, x.imag), end="")
             print()
 
 
