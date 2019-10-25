@@ -199,7 +199,7 @@ def main(*args):
                 print(' {:8.4f} {:8.4f} '.format(np.abs(x), np.rad2deg(np.angle(x))), end="")
             print()
             x = parallel(zi)
-            print('! Z in parallel    = {:8.4f} {:8.4f}j'.format(x.real, x.imag))
+            print('! Z in parallel    = {:8.4f} {:+8.4f}j'.format(x.real, x.imag))
         else:
             for i, x in enumerate(zij.flatten()):
                 if i > 0 and i % n == 0: print("\n        ", end="")

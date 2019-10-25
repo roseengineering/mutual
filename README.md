@@ -174,7 +174,7 @@ $ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -curr
 7.1      145.9689 +86.2965j  58.5139 +17.5013j
 ! E in RA notation =  75.1931  90.2443   62.0860 103.6427 
 ! I in RA notation =   0.4434  59.6528    1.0166  86.9910 
-! Z in parallel    =  42.3487  15.6908j
+! Z in parallel    =  42.3487 +15.6908j
 ```
 
 
