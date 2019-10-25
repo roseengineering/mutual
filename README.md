@@ -184,7 +184,7 @@ The Orr design above but 20 feet high and "autoloaded".
 ```
 $ mutual -loss 9 -diam .7in -height 20ft -freq 7.1 -el 0,0 -el 35.14ft,0 -autoload
 ! MHZ Z RI R 1
-! autoloading base = 256.2944j at 7.1 MHz
+! autoload vertical base = 256.2944j at 7.1 MHz
 7.1       18.6136  -0.0069   5.2691  -4.7229
            5.2691  -4.7229  18.6136  -0.0069
 ```
