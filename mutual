@@ -165,8 +165,8 @@ def main(*args):
             raise ValueError
 
     kw = dict(defaults, **kw)
-    currents = kw.get("currents")
 
+    print("! MHZ Z RI R 1")
     for freq in kw["frequencies"]:
         kw["frequency"] = freq
         if kw.get('autoload'):
