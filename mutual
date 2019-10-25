@@ -71,50 +71,40 @@ def generate_input(data, voltages):
     return text
 
 
-def analyze(data):
- 
-    # autoload
+def solve(zij, ii):
+    ei = zij * np.matrix(ii).T
+    return np.array(ei).T[0]
+
+
+def autoload(data):
     ii = run_nec(generate_input(dict(data, **{ "elements": [(0,0)] }), [1]))
     zself = 1 / ii[0]
+    print('! auto loading vertical  = {:.4f}j at {:g} MHz'.format(-zself.imag, data["frequency"]))
+    data["loading"] = -zself.imag
 
-    if data.get('autoload'):
-        print('! auto loading vertical  : {:.4f}j'.format(-zself.imag))
-        data["loading"] = -zself.imag
-        ii = run_nec(generate_input(dict(data, **{ "elements": [(0,0)] }), [1]))
-        zself = 1 / ii[0]
 
-    print("! element self impedance : {:.4f}".format(zself))
-
-    # calculate mutual impedance
-
+def mutual(data):
     n = len(data["elements"])
-    zij = np.zeros((n,n), dtype=np.complex)
+    zij = np.zeros((n, n), dtype=np.complex)
     for k in range(n):
         ei = np.ones(n) * 1e-20
         ei[k] = 1
         ii = run_nec(generate_input(data, ei))
         zij[:,k] = ii
     zij = np.array(np.linalg.inv(np.matrix(zij)))
-
-    # find error norm
-
-    ii = np.ones(n)
-    ei = zij * np.matrix(ii).T
-    ei = np.array(ei).T[0]
-    err = ii - run_nec(generate_input(data, ei))
-    print('! current error norm     : {:g}'.format(np.linalg.norm(err)))
-
-    # output touchstone file
-
-    print("# MHZ Z RI R 1")
-    print('{:<8g}'.format(data["frequency"]), end="")
-    for i, x in enumerate(zij.flatten()):
-        if i > 0 and i % n == 0: print("\n        ", end="")
-        print(' {:8.4f} {:8.4f}'.format(x.real, x.imag), end="")
-    print()
+    return zij
 
 
-def measure(buf):
+def to_complex(buf):
+    buf = buf.strip()
+    if '/' in buf:
+        r, theta = buf.split('/')
+        return np.double(r) * np.exp(1j * np.deg2rad(np.double(theta)))
+    else:
+        return np.complex(buf)
+
+
+def to_distance(buf):
     buf = buf.strip()
     if len(buf) > 2:
         suffix = buf[-2:]
@@ -129,35 +119,92 @@ def measure(buf):
             return np.float(s) * .3048
     return np.float(buf)
     
+
+def parallel(*zi):
+    return 1 / np.sum([ 1 / x for x in zi ])
+
+
+def tline(deg, zo=50):
+    theta = np.deg2rad(deg)
+    return np.matrix([
+        [ np.cos(theta), 1j * zo * np.sin(theta) ],
+        [ 1j * np.sin(theta) / zo, np.cos(theta) ]
+    ])
+
    
 def main(*args):
     args = list(args)
-    kw = { "elements": [] }
+    kw = { "elements": [], "tlines": [] }
     while args:
         opt = args.pop(0)
-        if opt == '-autoload':
+        if opt == '-debug':
+            kw["debug"] = True
+        elif opt == '-autoload':
             kw["autoload"] = True
         elif opt == '-freq':
-            kw["frequency"] = np.float(args.pop(0))
+            kw["frequencies"] = [ np.float(x) for x in args.pop(0).split(',') ]
         elif opt == '-loss':
             kw["losses"] = np.float(args.pop(0))
         elif opt == '-load':
             kw["loading"] = np.float(args.pop(0))
-        elif opt == '-seg':
+        elif opt == '-segs':
             kw["segments"] = np.int(args.pop(0))
         elif opt == '-height':
-            kw["height"] = measure(args.pop(0))
+            kw["height"] = to_distance(args.pop(0))
         elif opt == '-diam':
-            kw["diameter"] = measure(args.pop(0))
+            kw["diameter"] = to_distance(args.pop(0))
         elif opt == '-el':
-            kw["elements"].append([ measure(x) for x in args.pop(0).split(',') ])
+            kw["elements"].append([ to_distance(x) for x in args.pop(0).split(',') ])
+        elif opt == '-currents':
+            kw["currents"] = [ to_complex(x) for x in args.pop(0).split(',') ]
+        elif opt == '-tlines':
+            kw["tlines"] = [ to_complex(x) for x in args.pop(0).split(',') ]
+        elif opt == '-angle':
+            kw["angle"] = True
         else:
             raise ValueError
 
-    np.set_printoptions(precision=3)
     kw = dict(defaults, **kw)
-    analyze(kw)
+    currents = kw.get("currents")
+
+    for freq in kw["frequencies"]:
+        kw["frequency"] = freq
+        if kw.get('autoload'):
+            autoload(kw)
+        zij = mutual(kw)
+        n = zij.shape[0]
+    
+        if kw.get('debug'):
+            ii = np.ones(n)
+            ei = solve(zij, ii)
+            err = ii - run_nec(generate_input(kw, ei))
+            print('! current error norm     = {:g} at {:g} MHz'.format(np.linalg.norm(err), freq))
+
+        print('{:<8g}'.format(freq), end="")
+        if kw.get("currents"):
+            ii = np.array(kw["currents"])
+            ei = solve(zij, ii)
+            for i, x in enumerate(kw["tlines"]):
+                ei[i], ii[i] = solve(tline(np.rad2deg(np.angle(x)), zo=np.abs(x)), [ei[i], ii[i]])
+            zi = ei / ii
+            for x in zi:
+                print(' {:8.4f} {:8.4f}'.format(x.real, x.imag), end="")
+            print()
+            print('! E in RA notation =', end="")
+            for x in ei:
+                print(' {:8.4f} {:8.4f}'.format(np.abs(x), np.rad2deg(np.angle(x))), end="")
+            print()
+            x = parallel(zi)
+            print('! Z in parallel    = {:8.4f} {:8.4f}j'.format(x.real, x.imag))
+        else:
+            for i, x in enumerate(zij.flatten()):
+                if i > 0 and i % n == 0: print("\n        ", end="")
+                print(' {:8.4f} {:8.4f}'.format(x.real, x.imag), end="")
+            print()
 
 
-main(*sys.argv[1:])
+if __name__ == "__main__":
+    np.set_printoptions(precision=3)
+    main(*sys.argv[1:])
+
 

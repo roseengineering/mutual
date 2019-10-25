@@ -33,14 +33,17 @@ Command Line
 The program takes the following command line options:
 
 ```
--freq      : simulation frequency in megahertz 
+-freq      : simulation frequency (or frequencies) in megahertz 
 -loss      : vertical antenna resistive loss
 -load      : vertical antenna loading impedance
 -diam      : vertical antenna diameter
 -height    : vertical antenna height
--seg       : number of segments to divide the simulated vertical into
+-segs      : number of segments to divide the simulated vertical into
 -autoload  : automatically tune the self impedance of the vertical antennas
+-debug     : show the current error norm when simulating the array
 -el        : x,y location of a vertical antenna element
+-currents  : list of antenna elements currents j or / complex notation (solves for Zi)
+-tlines    : list of transmission lines in j or / complex notation (when solving for Zi)
 ```
 
 Note the -diam, -height, and -el options can take the following suffix modifiers:
@@ -78,7 +81,28 @@ W7EL's design in August 1979 QST.  A ground loss of 9 ohms was assumed.
 
 { run("mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0") }
 
+The Orr design above but for multiple frequencies.
+
+{ run("mutual -loss 9 -diam .7in -height 33.4ft -freq 7.0,7.1,7.2,7.3 -el 0,0 -el 35.14ft,0") }
+
+The Orr design above but for multiple frequencies.
+
+{ run("mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -currents 1,1/90") }
+
+... or using complex notation for the currents.
+
+{ run("mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -currents 1,j") }
+
+The Orr design above with the Christman matching transmission lines.
+
+{ run("mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -currents 1,1/-90 -tlines 75/90,75/180") }
+
+The Orr design above but 20 feet high and "autoloaded".
+
+{ run("mutual -loss 9 -diam .7in -height 20ft -freq 7.1 -el 0,0 -el 35.14ft,0 -autoload") }
+
 """)
+
 
 
 
