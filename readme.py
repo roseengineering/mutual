@@ -95,7 +95,7 @@ The Orr design above but solving with element currents using / notation.  (Use /
 
 The Orr design above with the Christman matching transmission lines.
 
-{ run("mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -currents 1,1/-90 -tlines 75/90,75/180") }
+{ run("mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -currents 1,-j -tlines 75/90.64,75/176.205") }
 
 The Orr design above but 20 feet high and "autoloaded".
 
