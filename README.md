@@ -11,7 +11,7 @@ requires the nec2c binary to be installed.
 Install 
 -------------
 
-Use 'pip install .' to install.
+Use 'pip install .' to install (or use 'pip install git+https://github.com/roseengineering/mutual').
 
 Command Line
 -------------
