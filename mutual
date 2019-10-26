@@ -178,21 +178,21 @@ def main(*args):
         kw["frequency"] = freq
         if kw.get('autoload'):
             autoload(kw)
-        zij = mutual(kw)
-        n = zij.shape[0]
-    
-        if kw.get('debug'):
-            ii = np.ones(n)
-            ei = solve(zij, ii)
-            err = ii - run_nec(generate_input(kw, ei))
-            print('! current error norm     = {:g} at {:g} MHz'.format(np.linalg.norm(err), freq))
 
+        # calculate mutual impedance
+
+        zij = mutual(kw)
+
+        # display results
+    
+        n = zij.shape[0]
         print('{:<8g}'.format(freq), end="")
         if kw.get("currents"):
             ii = np.array(kw["currents"])
             ei = solve(zij, ii)
 
             # handle tlines
+
             for i, x in enumerate(kw["tlines"]):
                 x = to_complex(x, f=freq, vf=kw["vf"])
                 ei[i], ii[i] = solve(tline(np.rad2deg(np.angle(x)), zo=np.abs(x)), [ei[i], ii[i]])
@@ -211,6 +211,15 @@ def main(*args):
                     print('{:<8s}'.format(''), end="")
                 print(','.join([ ' {:8.4f} {:+8.4f}j'.format(
                       zij[i][j].real, zij[i][j].imag) for j in range(n) ]))
+
+        # calculate error norm when simulating
+
+        if kw.get('debug'):
+            ii = np.ones(n)
+            ei = solve(zij, ii)
+            err = ii - run_nec(generate_input(kw, ei))
+            print('! error norm       = {:g} at {:g} MHz'.format(np.linalg.norm(err), freq))
+
 
 
 if __name__ == "__main__":
