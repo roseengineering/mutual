@@ -290,11 +290,12 @@ def solve(ei, ii, data):
     print('! Z in parallel    = %.4f' % parallel(*feedr))
     print('! E in parallel    = %.4f' % feede)
     print("! MHZ  LINE               ZI       X1         X2         ELINE        EPHASE              PI                          TEE")
-    for ref in range(n):
-        for d in combo:
-            net = np.array([ match[i][k] for i, k in enumerate(d) ])
-            if np.any(np.isnan(net.flatten())): continue
-            print('!')
+    for d in combo:
+        net = np.array([ match[i][k] for i, k in enumerate(d) ])
+        if np.any(np.isnan(net.flatten())): continue
+
+        print('!')
+        for ref in range(n):
 
             line = np.array([ ei, ii ]).T
             for i, m, reverse in zip(range(n), net, d > 1):
