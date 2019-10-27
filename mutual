@@ -275,8 +275,10 @@ def solve(ei, ii, data):
     freq = data["frequency"]
     zi = ei / ii
     power = np.abs(ii**2) * zi.real
-    total = np.sum(power)
-    feede = np.sqrt(np.sum(total) * 50)
+    feede = np.sqrt(np.sum(power) * 50)
+
+    print('! total power      = %.4f' % np.sum(power))
+    print('! E in parallel    = %.4f' % feede)
 
     if data.get("tie"):
         isum = np.sum([ ii[i-1] for i in data["tie"] ])
@@ -289,8 +291,6 @@ def solve(ei, ii, data):
     combo = np.array([ [ i // (4 ** (n - k - 1)) % 4 for k in range(n) ] for i in range(4 ** n) ])
 
     print('! line resistances =', ' '.join([ '%.4f' % r for r in feedr ]))
-    print('! E in parallel    = %.4f' % feede)
-    print('! total power      = %.4f' % total)
     print("! MHZ  LINE               ZI       X1         X2         ELINE        EPHASE              PI                          TEE")
     for d in combo:
         net = np.array([ match[i][k] for i, k in enumerate(d) ])
