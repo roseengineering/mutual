@@ -262,7 +262,7 @@ $ mutual -loss 9 -diam .7in -freq 14.1 -height 16.7ft -el 0,0 -el 17.57ft,0 -cur
 ```
 
 
-Solve the matching network for a 3-element in-line, quarter wave spacing, array.
+Solve the matching network for a 3-element in-line, quarter wave spacing array.
 
 
 ```
