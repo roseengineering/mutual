@@ -45,6 +45,7 @@ The program takes the following command line options:
 -currents  : list of antenna elements currents j or / complex notation
 -tlines    : list of transmission lines in j or / complex notation (used with currents)
 -vf        : velocity factor of the transmission line if angle given in feet or meters
+-solve     : solve matching networks for array
 ```
 
 Note the -diam, -height, and -el options can take the following suffix modifiers:
