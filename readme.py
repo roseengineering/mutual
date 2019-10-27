@@ -46,6 +46,7 @@ The program takes the following command line options:
 -tlines    : list of transmission lines in j or / complex notation (used with currents)
 -vf        : velocity factor of the transmission line if angle given in feet or meters
 -solve     : solve matching networks for array
+-tie       : list of lines to tie together
 ```
 
 Note the -diam, -height, and -el options can take the following suffix modifiers:
@@ -118,9 +119,9 @@ All designs from Orr on page 149.
 { run("mutual -loss 9 -diam .7in -freq 10.1 -height 23.2ft -el 0,0 -el 24.36ft,0 -currents 1,-j -tlines 75/16.07ft,75/32.15ft") }
 { run("mutual -loss 9 -diam .7in -freq 14.1 -height 16.7ft -el 0,0 -el 17.57ft,0 -currents 1,-j -tlines 75/11.60ft,75/22.55ft") }
 
-Solve the matching network for a 3-element in-line, quarter wave spacing.
+Solve the matching network for a 3-element in-line, quarter wave spacing, array.
 
-{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -el 130ft,0 -currents 1,1/90,-1 -solve") }
+{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -el 130ft,0 -currents 1,1/-90,-1 -solve") }
 
 """)
 

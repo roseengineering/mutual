@@ -83,7 +83,7 @@ def autoload(data):
     ei = [ 1 ]
     ii = run_nec(generate_input(dict(data, **d), ei))
     zself = 1 / ii[0]
-    print('! autoload vertical base = {:.4f}j'.format(-zself.imag))
+    print('! autoload vertical base   = {:.4f}j'.format(-zself.imag))
     data["loading"] = -zself.imag
 
 
@@ -184,7 +184,7 @@ def print_mutual(zij, data):
    
 def main(*args):
     args = list(args)
-    kw = { "elements": [], "tlines": [] }
+    kw = { "elements": [], "tlines": [], "tie": [] }
     while args:
         opt = args.pop(0)
         if opt == '-debug':
@@ -209,6 +209,8 @@ def main(*args):
             kw["elements"].append([ to_distance(x) for x in args.pop(0).split(',') ])
         elif opt == '-currents':
             kw["currents"] = [ to_complex(x) for x in args.pop(0).split(',') ]
+        elif opt == '-tie':
+            kw["tie"] = [ np.int(x) for x in args.pop(0).split(',') ]
         elif opt == '-tlines':
             kw["tlines"] = args.pop(0).split(',')
         elif opt == '-vf':
@@ -271,19 +273,22 @@ def component(x, f, precision=5):
 def solve(ei, ii, data):
     n = len(ei)
     freq = data["frequency"]
+
+    isum = np.sum([ ii[i-1] for i in data["tie"] ])
+    for i in data["tie"]: ii[i-1] = isum
+     
     zi = ei / ii
     power = np.abs(ii**2) * zi.real
     feede = np.sqrt(np.sum(power) * 50)
     feedr = [ feede**2 / w for w in power ]
 
-    print('! line restances =', ' '.join([ '%.4f' % r for r in feedr ]))
-    print('! Z in parallel  = %.4f' % parallel(*feedr))
-    print('! E in parallel  = %.4f' % feede)
-
-    # feedr = [50] * len(feedr)
+    
     match = [ np.concatenate([ lmatch(zi[i], feedr[i]), lmatch(zi[i], feedr[i], 'r') ]) for i in range(n) ]
     combo = np.array([ [ i // (4 ** (n - k - 1)) % 4 for k in range(n) ] for i in range(4 ** n) ])
 
+    print('! line resistances =', ' '.join([ '%.4f' % r for r in feedr ]))
+    print('! Z in parallel    = %.4f' % parallel(*feedr))
+    print('! E in parallel    = %.4f' % feede)
     print("! MHZ  LINE               ZI       X1         X2         ELINE        EPHASE              PI                          TEE")
     for ref in range(n):
         for d in combo:
@@ -299,15 +304,15 @@ def solve(ei, ii, data):
                 else:
                     line[i] = multiply([[1, 0], [1 / (1j*m[1]), 1]], line[i])  # shunt
                     line[i] = multiply([[1, 1j*m[0]], [0, 1]], line[i])        # series
-
+          
             for i, m, reverse in zip(range(n), net, d > 1):
                 print('{:<8g} {:2d} {:16.5g}'.format(freq, i + 1, zi[i]), end=" ")
                 print('{:>8s} {:s} {:>8s}'.format(component(m[0], freq), '/' if reverse else '\\', component(m[1], freq)), end=" ")
                 print('{:9.4f} {:8.3f}'.format(np.abs(line[i][0]), np.rad2deg(np.angle(line[i][0]))), end=" ")
+                zo = (line[i][0] / line[i][1]).real
                 theta = np.angle(line[ref][0]) - np.angle(line[i][0])
                 theta = np.mod(theta + np.pi, 2 * np.pi) - np.pi
                 print('{:8.3f}'.format(np.rad2deg(theta)), end=" ")
-                zo = (line[i][0] / line[i][1]).real
 
                 xs = zo * np.sin(theta)
                 xp = -zo * np.sin(theta) / (1 - np.cos(theta))
@@ -318,7 +323,6 @@ def solve(ei, ii, data):
                     v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
                     v = multiply([[1, 1j*xs], [0, 1]], v)        # series
                     v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
-                assert((v[0] / v[1]).real - feedr[i] < 1e-10)
                 assert(np.abs(v[0] - line[ref][0]) < 1e-10)
 
                 xs = zo * (1 - np.cos(theta)) / np.sin(theta)
@@ -330,9 +334,7 @@ def solve(ei, ii, data):
                     v = multiply([[1, 1j*xs], [0, 1]], v)        # series
                     v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
                     v = multiply([[1, 1j*xs], [0, 1]], v)        # series
-                assert((v[0] / v[1]).real - feedr[i] < 1e-10)
                 assert(np.abs(v[0] - line[ref][0]) < 1e-10)
-
                 print()
 
 
