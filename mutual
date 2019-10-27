@@ -12,6 +12,21 @@ defaults = {
 }
 
 
+def lmatch(ZS, ZL, reverse=False):
+    """
+    ZS <---+---X2--< ZL
+           X1   
+    """
+    if reverse: ZS, ZL = ZL, ZS
+    RS, XS = ZS.real, ZS.imag
+    RL, XL = ZL.real, ZL.imag
+    QS = RS / RL - 1 + XS**2 / (RS * RL)
+    Q = np.sqrt(QS)
+    X1 = (XS + np.array([1, -1]) * Q * RS) / (RS / RL - 1)
+    X2 = -(XL + np.array([1, -1]) * Q * RL)
+    return np.array([X1, X2]).T
+
+
 def run_process(text):
     name = tempfile.mktemp()
     command = 'nec2c -i %s -o /dev/stdout' % name
@@ -73,15 +88,17 @@ def generate_input(data, voltages):
     return text
 
 
-def solve(zij, ii):
+def multiply(zij, ii):
     ei = zij * np.matrix(ii).T
     return np.array(ei).T[0]
 
 
 def autoload(data):
-    ii = run_nec(generate_input(dict(data, **{ "elements": [(0,0)] }), [1]))
+    d = { "elements": [ (0, 0) ] }
+    ei = [ 1 ]
+    ii = run_nec(generate_input(dict(data, **d), ei))
     zself = 1 / ii[0]
-    print('! autoload vertical base = {:.4f}j at {:g} MHz'.format(-zself.imag, data["frequency"]))
+    print('! autoload vertical base = {:.4f}j'.format(-zself.imag))
     data["loading"] = -zself.imag
 
 
@@ -95,6 +112,14 @@ def mutual(data):
         zij[:,k] = ii
     zij = np.array(np.linalg.inv(np.matrix(zij)))
     return zij
+
+
+def error_norm(zij, data):
+    n = zij.shape[0]
+    ii = np.ones(n)
+    ei = multiply(zij, ii)
+    err = ii - run_nec(generate_input(data, ei))
+    print('! error norm       = {:g}'.format(np.linalg.norm(err)))
 
 
 def to_complex(buf, f=None, vf=None):
@@ -139,6 +164,36 @@ def tline(deg, zo=50):
         [ 1j * np.sin(theta) / zo, np.cos(theta) ]
     ])
 
+
+def print_drive(zij, data):
+    n = zij.shape[0]
+    freq = data["frequency"]
+    ii = np.array(data["currents"])
+    ei = multiply(zij, ii)
+    # handle tlines
+    for i, x in enumerate(data["tlines"]):
+        x = to_complex(x, f=freq, vf=data["vf"])
+        ei[i], ii[i] = multiply(tline(np.rad2deg(np.angle(x)), zo=np.abs(x)), [ei[i], ii[i]])
+    zi = ei / ii
+    ztot = parallel(zi)
+    print('{:<8g}'.format(freq), end="")
+    print(','.join([ ' {:8.4f} {:+8.4f}j'.format(x.real, x.imag) for x in zi ]))
+    print('! E in MA notation =', end="")
+    print(','.join([ ' {:8.4f} {:8.4f}'.format(np.abs(x), np.rad2deg(np.angle(x))) for x in ei ]))
+    print('! I in MA notation =', end="")
+    print(','.join([ ' {:8.4f} {:8.4f}'.format(np.abs(x), np.rad2deg(np.angle(x))) for x in ii ]))
+    print('! Z in parallel    = {:8.4f} {:+8.4f}j'.format(ztot.real, ztot.imag))
+
+
+def print_mutual(zij, data):
+    n = zij.shape[0]
+    freq = data["frequency"]
+    print('{:<8g}'.format(freq), end="")
+    for i in range(n):
+        if i > 0: print('{:<8s}'.format(''), end="")
+        print(','.join([ ' {:8.4f} {:+8.4f}j'.format(
+              zij[i][j].real, zij[i][j].imag) for j in range(n) ]))
+
    
 def main(*args):
     args = list(args)
@@ -176,54 +231,36 @@ def main(*args):
     print("! MHZ Z RI R 1")
     for freq in kw["frequencies"]:
         kw["frequency"] = freq
+
         if kw.get('autoload'):
             autoload(kw)
-
-        # calculate mutual impedance
-
         zij = mutual(kw)
 
         # display results
-    
-        n = zij.shape[0]
-        print('{:<8g}'.format(freq), end="")
         if kw.get("currents"):
-            ii = np.array(kw["currents"])
-            ei = solve(zij, ii)
-
-            # handle tlines
-
-            for i, x in enumerate(kw["tlines"]):
-                x = to_complex(x, f=freq, vf=kw["vf"])
-                ei[i], ii[i] = solve(tline(np.rad2deg(np.angle(x)), zo=np.abs(x)), [ei[i], ii[i]])
-
-            zi = ei / ii
-            print(','.join([ ' {:8.4f} {:+8.4f}j'.format(x.real, x.imag) for x in zi ]))
-            print('! E in MA notation =', end="")
-            print(','.join([ ' {:8.4f} {:8.4f}'.format(np.abs(x), np.rad2deg(np.angle(x))) for x in ei ]))
-            print('! I in MA notation =', end="")
-            print(','.join([ ' {:8.4f} {:8.4f}'.format(np.abs(x), np.rad2deg(np.angle(x))) for x in ii ]))
-            x = parallel(zi)
-            print('! Z in parallel    = {:8.4f} {:+8.4f}j'.format(x.real, x.imag))
+            print_drive(zij, kw)
         else:
-            for i in range(n):
-                if i > 0: 
-                    print('{:<8s}'.format(''), end="")
-                print(','.join([ ' {:8.4f} {:+8.4f}j'.format(
-                      zij[i][j].real, zij[i][j].imag) for j in range(n) ]))
+            print_mutual(zij, kw)
 
-        # calculate error norm when simulating
-
+        # calculate error norm
         if kw.get('debug'):
-            ii = np.ones(n)
-            ei = solve(zij, ii)
-            err = ii - run_nec(generate_input(kw, ei))
-            print('! error norm       = {:g} at {:g} MHz'.format(np.linalg.norm(err), freq))
-
+            error_norm(zij, kw)
 
 
 if __name__ == "__main__":
     np.set_printoptions(precision=3)
     main(*sys.argv[1:])
 
+
+#   print(fm('Fxxsxxccxxsxx','MHZ','SHUNT','SERIES','!','SERIES','SHUNT','ZS','ZL','SHUNT','SERIES','!','SERIES','SHUNT'))
+#   for f, S in zip(nw.f, nw.s):
+#       GS, GL, GIN, GOUT = matching(S, data.get('gs'), data.get('gl'))
+#       ZS, ZL = g2z(GS), g2z(GL)
+#       for i in range(2):
+#           print(fm('F', f / 1e6), 
+#                 fm('xxs', *lmatch(ZLINE, np.conj(ZS))[i], '!', f=f),
+#                 fm('xx', *lmatch(ZLINE, np.conj(ZS), 'r')[i], f=f), 
+#                 fm('cc', ZS, ZL),
+#                 fm('xxs', *lmatch(np.conj(ZL), ZLINE)[i], '!', f=f),
+#                 fm('xx', *lmatch(np.conj(ZL), ZLINE, 'r')[i], f=f))
 
