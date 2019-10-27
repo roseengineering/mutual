@@ -275,10 +275,12 @@ def solve(ei, ii, data):
     freq = data["frequency"]
     zi = ei / ii
     power = np.abs(ii**2) * zi.real
-    feede = np.sqrt(np.sum(power) * 50)
+    total = np.sum(power)
+    feede = np.sqrt(total * 50)
 
-    print('! total power      = %.4f' % np.sum(power))
+    print('! total power      = %.4f' % total)
     print('! E in parallel    = %.4f' % feede)
+    print('! Z in parallel    = %.4f' % (feede**2 / total))
 
     if data.get("tie"):
         isum = np.sum([ ii[i-1] for i in data["tie"] ])
@@ -326,7 +328,7 @@ def solve(ei, ii, data):
                     v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
                     v = multiply([[1, 1j*xs], [0, 1]], v)        # series
                     v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
-                # print('%.4f' % np.abs(v[0] - line[ref][0]), end=" ")
+                if data.get("debug"): print('%.4f' % np.abs(v[0] - line[ref][0]), end=" ")
 
                 xs = zo * (1 - np.cos(theta)) / np.sin(theta)
                 xp = -zo / np.sin(theta)
@@ -337,7 +339,7 @@ def solve(ei, ii, data):
                     v = multiply([[1, 1j*xs], [0, 1]], v)        # series
                     v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
                     v = multiply([[1, 1j*xs], [0, 1]], v)        # series
-                # print('%6.4f' % np.abs(v[0] - line[ref][0]), end=" ")
+                if data.get("debug"): print('%.4f' % np.abs(v[0] - line[ref][0]), end=" ")
                 print()
 
 

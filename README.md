@@ -26,13 +26,13 @@ The program takes the following command line options:
 -height    : vertical antenna height
 -segs      : number of segments to divide the simulated vertical into
 -autoload  : automatically base load the element vertical antenna
--debug     : show the current error norm when simulating the array
 -el        : x,y location of a vertical antenna element
 -currents  : list of antenna elements currents j or / complex notation
 -tlines    : list of transmission lines in j or / complex notation (used with currents)
 -vf        : velocity factor of the transmission line if angle given in feet or meters
 -solve     : solve matching networks for array
 -tie       : list of lines to tie together
+-debug     : show current error norm when simulating the array and other information
 ```
 
 Note the -diam, -height, and -el options can take the following suffix modifiers:
@@ -270,6 +270,7 @@ $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -el 130ft,0 -cur
 ! MHZ Z RI R 1
 ! total power      = 123.1165
 ! E in parallel    = 78.4591
+! Z in parallel    = 50.0000
 ! line resistances = 214.6013 174.7318 103.9810
 ! MHZ  LINE               ZI       X1         X2         ELINE        EPHASE              PI                          TEE
 !
