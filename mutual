@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import sys, subprocess, tempfile, os
+import subprocess, tempfile, os
 import numpy as np
 
 defaults = {
@@ -10,21 +10,6 @@ defaults = {
     "segments": 21,
     "vf": .66
 }
-
-
-def lmatch(ZS, ZL, reverse=False):
-    """
-    ZS <---+---X2--< ZL
-           X1   
-    """
-    if reverse: ZS, ZL = ZL, ZS
-    RS, XS = ZS.real, ZS.imag
-    RL, XL = ZL.real, ZL.imag
-    QS = RS / RL - 1 + XS**2 / (RS * RL)
-    Q = np.sqrt(QS)
-    X1 = (XS + np.array([1, -1]) * Q * RS) / (RS / RL - 1)
-    X2 = -(XL + np.array([1, -1]) * Q * RL)
-    return np.array([X1, X2]).T
 
 
 def run_process(text):
@@ -89,7 +74,7 @@ def generate_input(data, voltages):
 
 
 def multiply(zij, ii):
-    ei = zij * np.matrix(ii).T
+    ei = np.matrix(zij) * np.matrix(ii).T
     return np.array(ei).T[0]
 
 
@@ -167,16 +152,17 @@ def tline(deg, zo=50):
 
 def print_drive(zij, data):
     n = zij.shape[0]
-    freq = data["frequency"]
+    frequency = data["frequency"]
     ii = np.array(data["currents"])
     ei = multiply(zij, ii)
     # handle tlines
     for i, x in enumerate(data["tlines"]):
-        x = to_complex(x, f=freq, vf=data["vf"])
+        x = to_complex(x, f=frequency, vf=data["vf"])
         ei[i], ii[i] = multiply(tline(np.rad2deg(np.angle(x)), zo=np.abs(x)), [ei[i], ii[i]])
+    if data.get("solve"): return solve(ei, ii, data)
     zi = ei / ii
     ztot = parallel(zi)
-    print('{:<8g}'.format(freq), end="")
+    print('{:<8g}'.format(frequency), end="")
     print(','.join([ ' {:8.4f} {:+8.4f}j'.format(x.real, x.imag) for x in zi ]))
     print('! E in MA notation =', end="")
     print(','.join([ ' {:8.4f} {:8.4f}'.format(np.abs(x), np.rad2deg(np.angle(x))) for x in ei ]))
@@ -187,8 +173,8 @@ def print_drive(zij, data):
 
 def print_mutual(zij, data):
     n = zij.shape[0]
-    freq = data["frequency"]
-    print('{:<8g}'.format(freq), end="")
+    frequency = data["frequency"]
+    print('{:<8g}'.format(frequency), end="")
     for i in range(n):
         if i > 0: print('{:<8s}'.format(''), end="")
         print(','.join([ ' {:8.4f} {:+8.4f}j'.format(
@@ -204,6 +190,8 @@ def main(*args):
             kw["debug"] = True
         elif opt == '-autoload':
             kw["autoload"] = True
+        elif opt == '-solve':
+            kw["solve"] = True
         elif opt == '-freq':
             kw["frequencies"] = [ np.double(x) for x in args.pop(0).split(',') ]
         elif opt == '-loss':
@@ -247,20 +235,12 @@ def main(*args):
             error_norm(zij, kw)
 
 
+def solve(ei, ii, data):
+    pass
+
 if __name__ == "__main__":
-    np.set_printoptions(precision=3)
+    import sys
+    np.seterr(divide='ignore', invalid='ignore')
     main(*sys.argv[1:])
 
-
-#   print(fm('Fxxsxxccxxsxx','MHZ','SHUNT','SERIES','!','SERIES','SHUNT','ZS','ZL','SHUNT','SERIES','!','SERIES','SHUNT'))
-#   for f, S in zip(nw.f, nw.s):
-#       GS, GL, GIN, GOUT = matching(S, data.get('gs'), data.get('gl'))
-#       ZS, ZL = g2z(GS), g2z(GL)
-#       for i in range(2):
-#           print(fm('F', f / 1e6), 
-#                 fm('xxs', *lmatch(ZLINE, np.conj(ZS))[i], '!', f=f),
-#                 fm('xx', *lmatch(ZLINE, np.conj(ZS), 'r')[i], f=f), 
-#                 fm('cc', ZS, ZL),
-#                 fm('xxs', *lmatch(np.conj(ZL), ZLINE)[i], '!', f=f),
-#                 fm('xx', *lmatch(np.conj(ZL), ZLINE, 'r')[i], f=f))
 
