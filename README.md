@@ -269,7 +269,6 @@ Solve the matching network for a 3-element in-line, quarter wave spacing, array.
 $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -el 130ft,0 -currents 1,1/-90,-1 -solve
 ! MHZ Z RI R 1
 ! line resistances = 214.6013 174.7318 103.9810
-! Z in parallel    = 50.0000
 ! E in parallel    = 78.4591
 ! MHZ  LINE               ZI       X1         X2         ELINE        EPHASE              PI                          TEE
 !
