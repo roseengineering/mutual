@@ -47,6 +47,8 @@ The program takes the following command line options:
 -solve     : solve matching networks for array
 -tie       : list of lines to tie together
 -debug     : show current error norm when simulating the array and other information
+-power     : transmitter power output, default 100 watts
+-feed      : transmitter coax feedline impedance, default 50 ohms
 ```
 
 Note the -diam, -height, and -el options can take the following suffix modifiers:

@@ -8,7 +8,9 @@ defaults = {
     "losses": 0,
     "loading": 0,
     "segments": 21,
-    "vf": .66
+    "vf": .66,
+    "power": 100,
+    "feed": 50
 }
 
 
@@ -215,6 +217,10 @@ def main(*args):
             kw["tlines"] = args.pop(0).split(',')
         elif opt == '-vf':
             kw["vf"] = np.double(args.pop(0))
+        elif opt == '-power':
+            kw["power"] = np.double(args.pop(0))
+        elif opt == '-feed':
+            kw["feed"] = np.double(args.pop(0))
         else:
             raise ValueError
 
@@ -274,24 +280,23 @@ def solve(ei, ii, data):
     n = len(ei)
     freq = data["frequency"]
     zi = ei / ii
+
     power = np.abs(ii**2) * zi.real
-    total = np.sum(power)
-    feede = np.sqrt(total * 50)
+    # data["power"] = np.sum(power) 
+    ratio = np.sqrt(data["power"] / np.sum(power))
+    ei *= ratio
+    ii *= ratio
 
     if data.get("tie"):
         isum = np.sum([ ii[i-1] for i in data["tie"] ])
         for i in data["tie"]: ii[i-1] = isum
         zi = ei / ii
-        power = np.abs(ii**2) * zi.real
 
+    power = np.abs(ii**2) * zi.real
+    feede = np.sqrt(data["power"] * data["feed"])
     feedr = [ feede**2 / w for w in power ]
     match = [ np.concatenate([ lmatch(zi[i], feedr[i]), lmatch(zi[i], feedr[i], 'r') ]) for i in range(n) ]
     combo = np.array([ [ i // (4 ** (n - k - 1)) % 4 for k in range(n) ] for i in range(4 ** n) ])
-
-    # print('! total power      = %.4f' % total)
-    # print('! E in parallel    = %.4f' % feede)
-    # print('! Z in parallel    = %.4f' % (feede**2 / total))
-    # print('! line resistances =', ' '.join([ '%.4f' % r for r in feedr ]))
 
     print("! MHZ  LINE               ZA       X1         X2          ZTUNE         ELINE        EPHASE              PI                          TEE")
     for d in combo:
@@ -331,6 +336,7 @@ def solve(ei, ii, data):
                     v = multiply([[1, 1j*xs], [0, 1]], v)        # series
                     v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
                 if data.get("debug"): print('%.4f' % np.abs(v[0] - line[ref][0]), end=" ")
+                if data.get("debug"): print('%.4f' % (np.abs(v[1])**2 * (v[0]/v[1]).real), end=" ")
 
                 xs = zo.real * (1 - np.cos(theta)) / np.sin(theta)
                 xp = -zo.real / np.sin(theta)
@@ -342,6 +348,7 @@ def solve(ei, ii, data):
                     v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
                     v = multiply([[1, 1j*xs], [0, 1]], v)        # series
                 if data.get("debug"): print('%.4f' % np.abs(v[0] - line[ref][0]), end=" ")
+                if data.get("debug"): print('%.4f' % (np.abs(v[1])**2 * (v[0]/v[1]).real), end=" ")
                 print()
 
 
