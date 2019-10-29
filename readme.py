@@ -55,27 +55,27 @@ cm, mm, ft, and in.  Otherwise distance is provided in meters.
 Examples
 --------
 
-2-element, quarter-wave spacing
+A 2-element, quarter-wave spacing array.
 
 { run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0") }
 
-3-element in-line, quarter wave spacing
+A 3-element in-line, quarter wave spacing array.
 
 { run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -el 130ft,0") }
 
-2-element, half-wave spacing
+A 2-element, half-wave spacing array.
 
 { run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 130ft,0") }
 
-Triangular array, 0.289 wave spacing
+A triangular array, 0.289 wave spacing array.
 
 { run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,-11.41 -el 0,11.41 -el 19.74,0") }
 
-4-square array, quarter-wave spacing
+A 4-square array, quarter-wave spacing array.
 
 { run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -el 0,65ft -el 65ft,65ft") }
 
-4-square array, 1/8-wave spacing
+A 4-square array, 1/8-wave spacing array.
 
 { run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 32ft,0 -el 0,32ft -el 32ft,32ft") }
 
@@ -119,9 +119,17 @@ All designs from Orr on page 149.
 { run("mutual -loss 9 -diam .7in -freq 10.1 -height 23.2ft -el 0,0 -el 24.36ft,0 -currents 1,-j -tlines 75/16.07ft,75/32.15ft") }
 { run("mutual -loss 9 -diam .7in -freq 14.1 -height 16.7ft -el 0,0 -el 17.57ft,0 -currents 1,-j -tlines 75/11.60ft,75/22.55ft") }
 
-Solve the matching network for a 3-element in-line, quarter wave spacing array.
+Solve the matching network for a 3-element in-line, quarter-wave spacing array.
 
 { run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -el 130ft,0 -currents 1,1/-90,-1 -solve") }
+
+Solve the matching network for a 4-square, quarter-wave spacing array.
+
+{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 0,65ft -el 65ft,0 -el 65ft,65ft -currents 1,-j,-j,-1 -solve -tlines 50/100,50/100,50/100,50/100 -tie 2,3") }
+
+Solve the matching network for a 2-element, quarter-wave spacing array.
+
+{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -currents 1,-j -solve") }
 
 """)
 
