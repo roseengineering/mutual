@@ -161,7 +161,7 @@ def print_drive(zij, data):
     for i, x in enumerate(data["tlines"]):
         x = to_complex(x, f=frequency, vf=data["vf"])
         ei[i], ii[i] = multiply(tline(np.rad2deg(np.angle(x)), zo=np.abs(x)), [ei[i], ii[i]])
-    if data.get("solve"): return solve(ei, ii, data)
+    if data.get("k2bt"): return k2bt(ei, ii, data)
     zi = ei / ii
     ztot = parallel(zi)
     print('{:<8g}'.format(frequency), end="")
@@ -193,8 +193,8 @@ def main(*args):
             kw["debug"] = True
         elif opt == '-autoload':
             kw["autoload"] = True
-        elif opt == '-solve':
-            kw["solve"] = True
+        elif opt == '-k2bt':
+            kw["k2bt"] = True
         elif opt == '-freq':
             kw["frequencies"] = [ np.double(x) for x in args.pop(0).split(',') ]
         elif opt == '-loss':
@@ -276,7 +276,7 @@ def component(x, f, precision=5):
     return "%6.4g%s%s" % (np.absolute(value), SUFFIX[p-4], UNITS[0 if x < 0 else 1])
 
 
-def solve(ei, ii, data):
+def k2bt(ei, ii, data):
     n = len(ei)
     freq = data["frequency"]
     zi = ei / ii
