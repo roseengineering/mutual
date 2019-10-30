@@ -380,23 +380,21 @@ def solve(ei, ii, data, divider=False):
                         if i == ref:
                             print('{:>8s} {:>8s}  -'.format('-', '-'), end=" ")
                         elif hw == 1:
-                            xs, xp = pishift(-90, zo.real)
-                            print('{:>8s} {:>8s} -P'.format(component(xp, freq), component(xs, freq)), end=" ")
-                            v = pinet(v, xs, xp)
-                        elif hw == 2:
                             xs, xp = pishift(90, zo.real)
-                            print('{:>8s} {:>8s} +P'.format(component(xp, freq), component(xs, freq)), end=" ")
                             v = pinet(v, xs, xp)
+                            print('{:>8s} {:>8s} -P'.format(component(xp, freq), component(xs, freq)), end=" ")
+                        elif hw == 2:
+                            xs, xp = pishift(-90, zo.real)
+                            v = pinet(v, xs, xp)
+                            print('{:>8s} {:>8s} +P'.format(component(xp, freq), component(xs, freq)), end=" ")
                         elif hw == 3:
-                            xs, xp = teeshift(-90, zo.real)
-                            print('{:>8s} {:>8s} -T'.format(component(xs, freq), component(xp, freq)), end=" ")
-                            v = teenet(v, xs, xp)
-                        elif hw == 4:
                             xs, xp = teeshift(90, zo.real)
-                            print('{:>8s} {:>8s} +T'.format(component(xs, freq), component(xp, freq)), end=" ")
                             v = teenet(v, xs, xp)
-                        else:
-                            raise ValueError
+                            print('{:>8s} {:>8s} -T'.format(component(xs, freq), component(xp, freq)), end=" ")
+                        elif hw == 4:
+                            xs, xp = teeshift(-90, zo.real)
+                            v = teenet(v, xs, xp)
+                            print('{:>8s} {:>8s} +T'.format(component(xs, freq), component(xp, freq)), end=" ")
 
                         theta = np.rad2deg(np.angle(line[ref][0]) - np.angle(v[0]))
                         theta = np.mod(theta + 180, 360) - 180
