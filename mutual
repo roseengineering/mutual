@@ -161,17 +161,21 @@ def print_drive(zij, data):
     for i, x in enumerate(data["tlines"]):
         x = to_complex(x, f=frequency, vf=data["vf"])
         ei[i], ii[i] = multiply(tline(np.rad2deg(np.angle(x)), zo=np.abs(x)), [ei[i], ii[i]])
-    if data.get("k2bt"): return k2bt(ei, ii, data)
-    zi = ei / ii
-    ztot = parallel(zi)
-    print('{:<8g}'.format(frequency), end="")
-    print(','.join([ ' {:8.4f} {:+8.4f}j'.format(x.real, x.imag) for x in zi ]))
-    print('! E in MA notation =', end="")
-    print(','.join([ ' {:8.4f} {:8.4f}'.format(np.abs(x), np.rad2deg(np.angle(x))) for x in ei ]))
-    print('! I in MA notation =', end="")
-    print(','.join([ ' {:8.4f} {:8.4f}'.format(np.abs(x), np.rad2deg(np.angle(x))) for x in ii ]))
-    print('! Z in parallel    =', end="")
-    print(' {:8.4f} {:+8.4f}j'.format(ztot.real, ztot.imag))
+    if data.get("k2bt"): 
+        return solve(ei, ii, data)
+    elif data.get("ohmslaw"): 
+        return solve(ei, ii, data, ohmslaw=True)
+    else:
+        zi = ei / ii
+        ztot = parallel(zi)
+        print('{:<8g}'.format(frequency), end="")
+        print(','.join([ ' {:8.4f} {:+8.4f}j'.format(x.real, x.imag) for x in zi ]))
+        print('! E in MA notation =', end="")
+        print(','.join([ ' {:8.4f} {:8.4f}'.format(np.abs(x), np.rad2deg(np.angle(x))) for x in ei ]))
+        print('! I in MA notation =', end="")
+        print(','.join([ ' {:8.4f} {:8.4f}'.format(np.abs(x), np.rad2deg(np.angle(x))) for x in ii ]))
+        print('! Z in parallel    =', end="")
+        print(' {:8.4f} {:+8.4f}j'.format(ztot.real, ztot.imag))
 
 
 def print_mutual(zij, data):
@@ -195,6 +199,8 @@ def main(*args):
             kw["autoload"] = True
         elif opt == '-k2bt':
             kw["k2bt"] = True
+        elif opt == '-ohmslaw':
+            kw["ohmslaw"] = True
         elif opt == '-freq':
             kw["frequencies"] = [ np.double(x) for x in args.pop(0).split(',') ]
         elif opt == '-loss':
@@ -276,13 +282,12 @@ def component(x, f, precision=5):
     return "%6.4g%s%s" % (np.absolute(value), SUFFIX[p-4], UNITS[0 if x < 0 else 1])
 
 
-def k2bt(ei, ii, data):
+def solve(ei, ii, data, ohmslaw=False):
     n = len(ei)
     freq = data["frequency"]
     zi = ei / ii
 
     power = np.abs(ii**2) * zi.real
-    # data["power"] = np.sum(power) 
     ratio = np.sqrt(data["power"] / np.sum(power))
     ei *= ratio
     ii *= ratio
@@ -294,7 +299,7 @@ def k2bt(ei, ii, data):
 
     power = np.abs(ii**2) * zi.real
     feede = np.sqrt(data["power"] * data["feed"])
-    feedr = [ feede**2 / w for w in power ]
+    feedr = [ 50 ] * n if ohmslaw else [ feede**2 / w for w in power ]
     match = [ np.concatenate([ lmatch(zi[i], feedr[i]), lmatch(zi[i], feedr[i], 'r') ]) for i in range(n) ]
     combo = np.array([ [ i // (4 ** (n - k - 1)) % 4 for k in range(n) ] for i in range(4 ** n) ])
 
@@ -312,8 +317,8 @@ def k2bt(ei, ii, data):
                     line[i] = multiply([[1, 1j*m[1]], [0, 1]], line[i])        # series
                     line[i] = multiply([[1, 0], [1 / (1j*m[0]), 1]], line[i])  # shunt
                 else:
-                    line[i] = multiply([[1, 0], [1 / (1j*m[1]), 1]], line[i])  # shunt
-                    line[i] = multiply([[1, 1j*m[0]], [0, 1]], line[i])        # series
+                    line[i] = multiply([[1, 0], [1 / (1j*m[0]), 1]], line[i])  # shunt
+                    line[i] = multiply([[1, 1j*m[1]], [0, 1]], line[i])        # series
           
             for i, m, reverse in zip(range(n), net, d > 1):
                 zo = line[i][0] / line[i][1]
