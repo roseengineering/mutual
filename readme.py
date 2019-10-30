@@ -139,6 +139,9 @@ Solve the matching network for a 2-element, quarter-wave spacing array using the
 
 { run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -currents 1,-j -divider") }
 
+Use a halfwave section in-between before phaser for fine adjustment.
+
+{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -currents 1,-j -divider -halfwave") }
 """)
 
 
