@@ -371,7 +371,7 @@ def solve(ei, ii, data, divider=False):
 
                     v = line[i]
                     theta = np.rad2deg(np.angle(v[0]) - np.angle(line[ref][0]))
-                    # theta = np.mod(theta + 180, 360) - 180
+                    theta = np.mod(theta + 180, 360) - 180
                     print('{:8.3f}'.format(theta), end=" ")
 
                     ######################################
