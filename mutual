@@ -253,12 +253,11 @@ def main(*args):
 ######################
 
 
-def lmatch(ZS, ZL, reverse=False):
+def lmatch(ZS, ZL):
     """
     ZS <---+---X2--< ZL
            X1   
     """
-    if reverse: ZS, ZL = ZL, ZS
     RS, XS = ZS.real, ZS.imag
     RL, XL = ZL.real, ZL.imag
     QS = RS / RL - 1 + XS**2 / (RS * RL)
@@ -303,7 +302,7 @@ def solve(ei, ii, data, divider=False):
         feedr = [ 50 ] * n 
     else:
         feedr = [ feede**2 / w for w in power ]
-    match = [ np.concatenate([ lmatch(zi[i], feedr[i]), lmatch(zi[i], feedr[i], 'r') ]) for i in range(n) ]
+    match = [ np.concatenate([ lmatch(zi[i], feedr[i]), lmatch(feedr[i], zi[i]) ]) for i in range(n) ]
     combo = np.array([ [ i // (4 ** (n - k - 1)) % 4 for k in range(n) ] for i in range(4 ** n) ])
 
     print("! MHZ  LINE               ZA       X1         X2          ZTUNE         ELINE        EPHASE              PI                          TEE")
