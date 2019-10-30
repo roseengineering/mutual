@@ -195,6 +195,8 @@ def main(*args):
         opt = args.pop(0)
         if opt == '-debug':
             kw["debug"] = True
+        elif opt == '-halfwave':
+            kw["halfwave"] = True
         elif opt == '-autoload':
             kw["autoload"] = True
         elif opt == '-k2bt':
@@ -239,15 +241,15 @@ def main(*args):
             autoload(kw)
         zij = mutual(kw)
 
+        # calculate error norm
+        if kw.get('debug'):
+            error_norm(zij, kw)
+
         # display results
         if kw.get("currents"):
             print_drive(zij, kw)
         else:
             print_mutual(zij, kw)
-
-        # calculate error norm
-        if kw.get('debug'):
-            error_norm(zij, kw)
 
 
 ######################
@@ -295,6 +297,19 @@ def teeshift(theta, zo):
     return xs, xp
 
 
+def pinet(v, xs, xp):
+    v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
+    v = multiply([[1, 1j*xs], [0, 1]], v)        # series
+    v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
+    return v
+
+def teenet(v, xs, xp):
+    v = multiply([[1, 1j*xs], [0, 1]], v)        # series
+    v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
+    v = multiply([[1, 1j*xs], [0, 1]], v)        # series
+    return v
+
+
 def solve(ei, ii, data, divider=False):
     n = len(ei)
     freq = data["frequency"]
@@ -319,13 +334,20 @@ def solve(ei, ii, data, divider=False):
     match = [ np.concatenate([ lmatch(zi[i], feedr[i]), lmatch(feedr[i], zi[i]) ]) for i in range(n) ]
     combo = np.array([ [ i // (4 ** (n - k - 1)) % 4 for k in range(n) ] for i in range(4 ** n) ])
 
-    print("! MHZ  LINE               ZA       X1         X2          ZTUNE         ELINE        DPHASE              PI                          TEE")
+    print("! MHZ  LINE               ZA       X1         X2          ZTUNE         ELINE        DPHASE", end="")
+    if data.get("halfwave"):
+        print()
+    else:
+        print("         PI                 TEE")
+
     for d in combo:
         net = np.array([ match[i][k] for i, k in enumerate(d) ])
         if np.any(np.isnan(net.flatten())): continue
 
         print('!')
         for ref in range(n):
+
+            # tune all tower lines for phase shifting
 
             line = np.array([ ei, ii ]).T
             for i, m, reverse in zip(range(n), net, d > 1):
@@ -335,44 +357,69 @@ def solve(ei, ii, data, divider=False):
                 else:
                     line[i] = multiply([[1, 0], [1 / (1j*m[0]), 1]], line[i])  # shunt
                     line[i] = multiply([[1, 1j*m[1]], [0, 1]], line[i])        # series
-          
-            for i, m, reverse in zip(range(n), net, d > 1):
-                print('{:<8g} {:2d} {:16.5g}'.format(freq, i + 1, zi[i]), end=" ")
-                if reverse:
-                    print('{:>8s} / {:>8s}'.format(component(m[1], freq), component(m[0], freq)), end=" ")
-                else:
-                    print('{:>8s} \\ {:>8s}'.format(component(m[0], freq), component(m[1], freq)), end=" ")
 
-                zo = line[i][0] / line[i][1]
-                print('{:14.2f}'.format(zo), end=" ")
-                print('{:9.4f} {:8.3f}'.format(np.abs(line[i][0]), np.rad2deg(np.angle(line[i][0]))), end=" ")
+            for hw in (range(1, 5) if data.get("halfwave") else range(1)):          
+                for i, m, reverse in zip(range(n), net, d > 1):
+                    print('{:<8g} {:2d} {:16.5g}'.format(freq, i + 1, zi[i]), end=" ")
+                    if reverse:
+                        print('{:>8s} / {:>8s}'.format(component(m[1], freq), component(m[0], freq)), end=" ")
+                    else:
+                        print('{:>8s} \\ {:>8s}'.format(component(m[0], freq), component(m[1], freq)), end=" ")
 
-                theta = np.rad2deg(np.angle(line[ref][0]) - np.angle(line[i][0]))
-                theta = np.mod(theta + 180, 360) - 180
-                print('{:8.3f}'.format(theta), end=" ")
+                    zo = line[i][0] / line[i][1]
+                    print('{:14.2f}'.format(zo), end=" ")
+                    print('{:9.4f} {:8.3f}'.format(np.abs(line[i][0]), np.rad2deg(np.angle(line[i][0]))), end=" ")
 
-                xs, xp = pishift(theta, zo.real)
-                print('{:>8s} {:>8s} {:>8s}'.format(component(xp, freq), component(xs, freq), component(xp, freq)), end=" ")
+                    v = line[i]
+                    theta = np.rad2deg(np.angle(line[ref][0]) - np.angle(v[0]))
+                    theta = np.mod(theta + 180, 360) - 180
+                    print('{:8.3f}'.format(theta), end=" ")
 
-                v = line[i]
-                if i != ref:
-                    v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
-                    v = multiply([[1, 1j*xs], [0, 1]], v)        # series
-                    v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
-                if data.get("debug"): print('%.4f' % np.abs(v[0] - line[ref][0]), end=" ")
-                if data.get("debug"): print('%.4f' % (np.abs(v[1])**2 * (v[0]/v[1]).real), end=" ")
+                    ######################################
 
-                xs, xp = teeshift(theta, zo.real)
-                print('| {:>8s} {:>8s} {:>8s}'.format(component(xs, freq), component(xp, freq), component(xs, freq)), end=" ")
+                    if hw > 0:
+                        if i == ref:
+                            xs, xp = 0, 0
+                            print('{:>8s} {:>8s}    '.format(component(xp, freq), component(xs, freq)), end=" ")
+                        elif hw == 1:
+                            xs, xp = pishift(-90, zo.real)
+                            print('{:>8s} {:>8s} pi '.format(component(xp, freq), component(xs, freq)), end=" ")
+                            v = pinet(v, xs, xp)
+                        elif hw == 2:
+                            xs, xp = pishift(90, zo.real)
+                            print('{:>8s} {:>8s} pi '.format(component(xp, freq), component(xs, freq)), end=" ")
+                            v = pinet(v, xs, xp)
+                        elif hw == 3:
+                            xs, xp = teeshift(-90, zo.real)
+                            print('{:>8s} {:>8s} tee'.format(component(xs, freq), component(xp, freq)), end=" ")
+                            v = teenet(v, xs, xp)
+                        elif hw == 4:
+                            xs, xp = teeshift(90, zo.real)
+                            print('{:>8s} {:>8s} tee'.format(component(xs, freq), component(xp, freq)), end=" ")
+                            v = teenet(v, xs, xp)
+                        else:
+                            raise ValueError
 
-                v = line[i]
-                if i != ref:
-                    v = multiply([[1, 1j*xs], [0, 1]], v)        # series
-                    v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
-                    v = multiply([[1, 1j*xs], [0, 1]], v)        # series
-                if data.get("debug"): print('%.4f' % np.abs(v[0] - line[ref][0]), end=" ")
-                if data.get("debug"): print('%.4f' % (np.abs(v[1])**2 * (v[0]/v[1]).real), end=" ")
-                print()
+                        theta = np.rad2deg(np.angle(line[ref][0]) - np.angle(v[0]))
+                        theta = np.mod(theta + 180, 360) - 180
+                        print('{:8.3f}'.format(theta), end=" ")
+
+                    ######################################
+
+                    memory = v
+                    xs, xp = pishift(theta, zo.real)
+                    print('{:>8s} {:>8s}'.format(component(xp, freq), component(xs, freq)), end=" ")
+                    if i != ref: v = pinet(v, xs, xp)
+                    if data.get("debug"): print('%.4f' % np.abs(np.angle(v[0]) - np.angle(line[ref][0])), end=" ")
+                    if data.get("debug"): print('%.4f' % (np.abs(v[1])**2 * (v[0]/v[1]).real), end=" ")
+
+                    v = memory
+                    xs, xp = teeshift(theta, zo.real)
+                    print('| {:>8s} {:>8s}'.format(component(xs, freq), component(xp, freq)), end=" ")
+                    if i != ref: v = teenet(v, xs, xp)
+                    if data.get("debug"): print('%.4f' % np.abs(np.angle(v[0]) - np.angle(line[ref][0])), end=" ")
+                    if data.get("debug"): print('%.4f' % (np.abs(v[1])**2 * (v[0]/v[1]).real), end=" ")
+                    print()
 
 
 if __name__ == "__main__":
