@@ -281,6 +281,20 @@ def component(x, f, precision=5):
     return "%6.4g%s%s" % (np.absolute(value), SUFFIX[p-4], UNITS[0 if x < 0 else 1])
 
 
+def pishift(theta, zo):
+    theta = np.deg2rad(theta)
+    xs = zo.real * np.sin(theta)
+    xp = -zo.real * np.sin(theta) / (1 - np.cos(theta))
+    return xs, xp
+
+
+def teeshift(theta, zo):
+    theta = np.deg2rad(theta)
+    xs = zo.real * (1 - np.cos(theta)) / np.sin(theta)
+    xp = -zo.real / np.sin(theta)
+    return xs, xp
+
+
 def solve(ei, ii, data, divider=False):
     n = len(ei)
     freq = data["frequency"]
@@ -299,13 +313,13 @@ def solve(ei, ii, data, divider=False):
     power = np.abs(ii**2) * zi.real
     feede = np.sqrt(data["power"] * data["feed"])
     if divider:
-        feedr = [ 50 ] * n 
+        feedr = [ data["feed"] ] * n 
     else:
         feedr = [ feede**2 / w for w in power ]
     match = [ np.concatenate([ lmatch(zi[i], feedr[i]), lmatch(feedr[i], zi[i]) ]) for i in range(n) ]
     combo = np.array([ [ i // (4 ** (n - k - 1)) % 4 for k in range(n) ] for i in range(4 ** n) ])
 
-    print("! MHZ  LINE               ZA       X1         X2          ZTUNE         ELINE        EPHASE              PI                          TEE")
+    print("! MHZ  LINE               ZA       X1         X2          ZTUNE         ELINE        DPHASE              PI                          TEE")
     for d in combo:
         net = np.array([ match[i][k] for i, k in enumerate(d) ])
         if np.any(np.isnan(net.flatten())): continue
@@ -323,21 +337,21 @@ def solve(ei, ii, data, divider=False):
                     line[i] = multiply([[1, 1j*m[1]], [0, 1]], line[i])        # series
           
             for i, m, reverse in zip(range(n), net, d > 1):
-                zo = line[i][0] / line[i][1]
-                theta = np.angle(line[ref][0]) - np.angle(line[i][0])
-                theta = np.mod(theta + np.pi, 2 * np.pi) - np.pi
-
                 print('{:<8g} {:2d} {:16.5g}'.format(freq, i + 1, zi[i]), end=" ")
                 if reverse:
                     print('{:>8s} / {:>8s}'.format(component(m[1], freq), component(m[0], freq)), end=" ")
                 else:
                     print('{:>8s} \\ {:>8s}'.format(component(m[0], freq), component(m[1], freq)), end=" ")
+
+                zo = line[i][0] / line[i][1]
                 print('{:14.2f}'.format(zo), end=" ")
                 print('{:9.4f} {:8.3f}'.format(np.abs(line[i][0]), np.rad2deg(np.angle(line[i][0]))), end=" ")
-                print('{:8.3f}'.format(np.rad2deg(theta)), end=" ")
 
-                xs = zo.real * np.sin(theta)
-                xp = -zo.real * np.sin(theta) / (1 - np.cos(theta))
+                theta = np.rad2deg(np.angle(line[ref][0]) - np.angle(line[i][0]))
+                theta = np.mod(theta + 180, 360) - 180
+                print('{:8.3f}'.format(theta), end=" ")
+
+                xs, xp = pishift(theta, zo.real)
                 print('{:>8s} {:>8s} {:>8s}'.format(component(xp, freq), component(xs, freq), component(xp, freq)), end=" ")
 
                 v = line[i]
@@ -348,8 +362,7 @@ def solve(ei, ii, data, divider=False):
                 if data.get("debug"): print('%.4f' % np.abs(v[0] - line[ref][0]), end=" ")
                 if data.get("debug"): print('%.4f' % (np.abs(v[1])**2 * (v[0]/v[1]).real), end=" ")
 
-                xs = zo.real * (1 - np.cos(theta)) / np.sin(theta)
-                xp = -zo.real / np.sin(theta)
+                xs, xp = teeshift(theta, zo.real)
                 print('| {:>8s} {:>8s} {:>8s}'.format(component(xs, freq), component(xp, freq), component(xs, freq)), end=" ")
 
                 v = line[i]
