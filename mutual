@@ -337,7 +337,7 @@ def solve(ei, ii, data, divider=False):
     print("! MHZ  LINE               ZA       X1         X2          ZTUNE         ELINE        DPHASE", end="")
     if data.get("halfwave"): 
         print('        HALFWAVE        DPHASE', end="")
-    print("  SHUNTPI SERIESPI  SERIESTEE SHUNTTEE")
+    print("  SHUNTPI SERIESPI  SERIESTEE SHUNTTEE   DPHASE")
 
     for d in combo:
         net = np.array([ match[i][k] for i, k in enumerate(d) ])
@@ -415,6 +415,10 @@ def solve(ei, ii, data, divider=False):
                     if i != ref: v = teenet(v, xs, xp)
                     if data.get("debug"): print('%.4f' % np.abs(np.angle(v[0]) - np.angle(line[ref][0])), end=" ")
                     if data.get("debug"): print('%.4f' % (np.abs(v[1])**2 * (v[0]/v[1]).real), end=" ")
+
+                    theta = np.rad2deg(np.angle(v[0]) - np.angle(line[ref][0]))
+                    theta = np.mod(theta + 180, 360) - 180
+                    print('{:8.3f}'.format(theta), end=" ")
                     print()
 
 
