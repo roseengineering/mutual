@@ -336,7 +336,7 @@ def solve(ei, ii, data, divider=False):
 
     print("! MHZ  LINE               ZA       X1         X2          ZTUNE         ELINE        DPHASE", end="")
     if data.get("halfwave"): 
-        print('       HALFWAVE        DPHASE', end="")
+        print('        HALFWAVE        DPHASE', end="")
     print("  SHUNTPI SERIESPI  SERIESTEE SHUNTTEE")
 
     for d in combo:
@@ -378,22 +378,22 @@ def solve(ei, ii, data, divider=False):
 
                     if hw > 0:
                         if i == ref:
-                            print('{:>8s} {:>8s}  '.format('-', '-'), end=" ")
+                            print('{:>8s} {:>8s}  -'.format('-', '-'), end=" ")
                         elif hw == 1:
                             xs, xp = pishift(-90, zo.real)
-                            print('{:>8s} {:>8s} P'.format(component(xp, freq), component(xs, freq)), end=" ")
+                            print('{:>8s} {:>8s} -P'.format(component(xp, freq), component(xs, freq)), end=" ")
                             v = pinet(v, xs, xp)
                         elif hw == 2:
                             xs, xp = pishift(90, zo.real)
-                            print('{:>8s} {:>8s} P'.format(component(xp, freq), component(xs, freq)), end=" ")
+                            print('{:>8s} {:>8s} +P'.format(component(xp, freq), component(xs, freq)), end=" ")
                             v = pinet(v, xs, xp)
                         elif hw == 3:
                             xs, xp = teeshift(-90, zo.real)
-                            print('{:>8s} {:>8s} T'.format(component(xs, freq), component(xp, freq)), end=" ")
+                            print('{:>8s} {:>8s} -T'.format(component(xs, freq), component(xp, freq)), end=" ")
                             v = teenet(v, xs, xp)
                         elif hw == 4:
                             xs, xp = teeshift(90, zo.real)
-                            print('{:>8s} {:>8s} T'.format(component(xs, freq), component(xp, freq)), end=" ")
+                            print('{:>8s} {:>8s} +T'.format(component(xs, freq), component(xp, freq)), end=" ")
                             v = teenet(v, xs, xp)
                         else:
                             raise ValueError
