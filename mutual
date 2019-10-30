@@ -329,7 +329,10 @@ def solve(ei, ii, data, divider=False):
                 theta = np.mod(theta + np.pi, 2 * np.pi) - np.pi
 
                 print('{:<8g} {:2d} {:16.5g}'.format(freq, i + 1, zi[i]), end=" ")
-                print('{:>8s} {:s} {:>8s}'.format(component(m[0], freq), '/' if reverse else '\\', component(m[1], freq)), end=" ")
+                if reverse:
+                    print('{:>8s} / {:>8s}'.format(component(m[1], freq), component(m[0], freq)), end=" ")
+                else:
+                    print('{:>8s} \\ {:>8s}'.format(component(m[0], freq), component(m[1], freq)), end=" ")
                 print('{:14.2f}'.format(zo), end=" ")
                 print('{:9.4f} {:8.3f}'.format(np.abs(line[i][0]), np.rad2deg(np.angle(line[i][0]))), end=" ")
                 print('{:8.3f}'.format(np.rad2deg(theta)), end=" ")
