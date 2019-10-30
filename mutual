@@ -328,7 +328,7 @@ def solve(ei, ii, data, divider=False):
     power = np.abs(ii**2) * zi.real
     feede = np.sqrt(data["power"] * data["feed"])
     if divider:
-        feedr = [ data["feed"] ] * n 
+        feedr = [ np.sign(w) * data["feed"] for w in power ]
     else:
         feedr = [ feede**2 / w for w in power ]
     match = [ np.concatenate([ lmatch(zi[i], feedr[i]), lmatch(feedr[i], zi[i]) ]) for i in range(n) ]

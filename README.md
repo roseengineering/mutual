@@ -698,7 +698,7 @@ $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -currents 1,-j -
 ```
 
 
-Use a halfwave section in-between before phaser for fine adjustment.
+Use a halfwave section for fine adjustments before phase shifting circuits.
 
 
 ```
