@@ -378,7 +378,7 @@ def solve(ei, ii, data, divider=False):
 
                     if hw > 0:
                         if i == ref:
-                            print('{:>8s} {:>8s}  '.format('', ''), end=" ")
+                            print('{:>8s} {:>8s}  '.format('-', '-'), end=" ")
                         elif hw == 1:
                             xs, xp = pishift(-90, zo.real)
                             print('{:>8s} {:>8s} P'.format(component(xp, freq), component(xs, freq)), end=" ")
