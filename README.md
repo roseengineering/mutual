@@ -30,11 +30,12 @@ The program takes the following command line options:
 -currents  : list of antenna elements currents j or / complex notation
 -tlines    : list of transmission lines in j or / complex notation (used with currents)
 -vf        : velocity factor of the transmission line if angle given in feet or meters
--k2bt      : solve matching networks for array using K2BT method
 -tie       : list of lines to tie together
 -debug     : show current error norm when simulating the array and other information
 -power     : transmitter power output, default 100 watts
 -feed      : transmitter coax feedline impedance, default 50 ohms
+-k2bt      : solve matching networks for the array using the K2BT method
+-divider   : solve matching networks for the array using a power divider
 ```
 
 Note the -diam, -height, and -el options can take the following suffix modifiers:
@@ -264,7 +265,7 @@ $ mutual -loss 9 -diam .7in -freq 14.1 -height 16.7ft -el 0,0 -el 17.57ft,0 -cur
 ```
 
 
-Solve the matching network for a 3-element in-line, quarter-wave spacing array.
+Solve the matching network for a 3-element in-line, quarter-wave spacing array using the K2BT method.
 
 
 ```
@@ -354,7 +355,7 @@ $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -el 130ft,0 -cur
 ```
 
 
-Solve the matching network for a 4-square, quarter-wave spacing array.
+Solve the matching network for a 4-square, quarter-wave spacing array using the K2BT method.
 
 
 ```
@@ -636,7 +637,7 @@ $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 0,65ft -el 65ft,0 -el 6
 ```
 
 
-Solve the matching network for a 2-element, quarter-wave spacing array.
+Solve the matching network for a 2-element, quarter-wave spacing array using the K2BT method.
 
 
 ```
@@ -663,6 +664,36 @@ $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -currents 1,-j -
 3.8       2   51.376+20.782j  358.5pF /  411.7nH    69.62+0.00j   70.7107  -59.211  129.515  1.276nF  2.249uH  1.276nF |  6.184uH  464.1pF  6.184uH 
 3.8       1   20.156-17.471j  659.4pF /   3.09uH   177.44+0.00j   70.7107   70.304 -129.515  3.504uH    306pF  3.504uH |  111.3pF  9.633uH  111.3pF 
 3.8       2   51.376+20.782j  358.5pF /  411.7nH    69.62+0.00j   70.7107  -59.211    0.000        -        -        - |        -        -        - 
+```
+
+
+Solve the matching network for a 2-element, quarter-wave spacing array using a power divider method.
+
+
+```
+$ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -currents 1,-j -divider
+! MHZ Z RI R 1
+! MHZ  LINE               ZA       X1         X2          ZTUNE         ELINE        EPHASE              PI                          TEE
+!
+3.8       1   20.156-17.471j  1.721uH /  5.936nF    50.00+0.00j   37.5353  -50.586    0.000        -        -        - |        -        -        - 
+3.8       2   51.376+20.782j  66.21uH \  1.894nF    50.00-0.00j   59.9258  -91.837   41.252  315.3pF  1.381uH  315.3pF |  788.2nH  552.3pF  788.2nH 
+3.8       1   20.156-17.471j  1.721uH /  5.936nF    50.00+0.00j   37.5353  -50.586  -41.252  5.564uH   1.27nF  5.564uH |  2.225nF  3.176uH  2.225nF 
+3.8       2   51.376+20.782j  66.21uH \  1.894nF    50.00-0.00j   59.9258  -91.837    0.000        -        -        - |        -        -        - 
+!
+3.8       1   20.156-17.471j  1.721uH /  5.936nF    50.00+0.00j   37.5353  -50.586    0.000        -        -        - |        -        -        - 
+3.8       2   51.376+20.782j  593.3pF \  926.3nH    50.00+0.00j   59.9258  -44.116   -6.470  37.05uH  7.434nF  37.05uH |  14.82nF  18.59uH  14.82nF 
+3.8       1   20.156-17.471j  1.721uH /  5.936nF    50.00+0.00j   37.5353  -50.586    6.470  47.34pF    236nH  47.34pF |  118.4nH  94.39pF  118.4nH 
+3.8       2   51.376+20.782j  593.3pF \  926.3nH    50.00+0.00j   59.9258  -44.116    0.000        -        -        - |        -        -        - 
+!
+3.8       1   20.156-17.471j  1.019nF /  1.759uH    50.00-0.00j   37.5353   50.586    0.000        -        -        - |        -        -        - 
+3.8       2   51.376+20.782j  66.21uH \  1.894nF    50.00-0.00j   59.9258  -91.837  142.423  2.462nF  1.277uH  2.462nF |  6.155uH  510.8pF  6.155uH 
+3.8       1   20.156-17.471j  1.019nF /  1.759uH    50.00-0.00j   37.5353   50.586 -142.423  712.4nH  1.374nF  712.4nH |    285pF  3.434uH    285pF 
+3.8       2   51.376+20.782j  66.21uH \  1.894nF    50.00-0.00j   59.9258  -91.837    0.000        -        -        - |        -        -        - 
+!
+3.8       1   20.156-17.471j  1.019nF /  1.759uH    50.00-0.00j   37.5353   50.586    0.000        -        -        - |        -        -        - 
+3.8       2   51.376+20.782j  593.3pF \  926.3nH    50.00+0.00j   59.9258  -44.116   94.701  909.4pF  2.087uH  909.4pF |  2.273uH  834.8pF  2.273uH 
+3.8       1   20.156-17.471j  1.019nF /  1.759uH    50.00-0.00j   37.5353   50.586  -94.701  1.929uH  840.5pF  1.929uH |  771.6pF  2.101uH  771.6pF 
+3.8       2   51.376+20.782j  593.3pF \  926.3nH    50.00+0.00j   59.9258  -44.116    0.000        -        -        - |        -        -        - 
 ```
 
 

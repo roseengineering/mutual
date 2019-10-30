@@ -44,11 +44,12 @@ The program takes the following command line options:
 -currents  : list of antenna elements currents j or / complex notation
 -tlines    : list of transmission lines in j or / complex notation (used with currents)
 -vf        : velocity factor of the transmission line if angle given in feet or meters
--k2bt      : solve matching networks for array using K2BT method
 -tie       : list of lines to tie together
 -debug     : show current error norm when simulating the array and other information
 -power     : transmitter power output, default 100 watts
 -feed      : transmitter coax feedline impedance, default 50 ohms
+-k2bt      : solve matching networks for the array using the K2BT method
+-divider   : solve matching networks for the array using a power divider
 ```
 
 Note the -diam, -height, and -el options can take the following suffix modifiers:
@@ -121,17 +122,21 @@ All designs from Orr on page 149.
 { run("mutual -loss 9 -diam .7in -freq 10.1 -height 23.2ft -el 0,0 -el 24.36ft,0 -currents 1,-j -tlines 75/16.07ft,75/32.15ft") }
 { run("mutual -loss 9 -diam .7in -freq 14.1 -height 16.7ft -el 0,0 -el 17.57ft,0 -currents 1,-j -tlines 75/11.60ft,75/22.55ft") }
 
-Solve the matching network for a 3-element in-line, quarter-wave spacing array.
+Solve the matching network for a 3-element in-line, quarter-wave spacing array using the K2BT method.
 
 { run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -el 130ft,0 -currents 1,1/-90,-1 -k2bt") }
 
-Solve the matching network for a 4-square, quarter-wave spacing array.
+Solve the matching network for a 4-square, quarter-wave spacing array using the K2BT method.
 
 { run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 0,65ft -el 65ft,0 -el 65ft,65ft -currents 1,-j,-j,-1 -k2bt -tlines 50/100,50/100,50/100,50/100 -tie 2,3") }
 
-Solve the matching network for a 2-element, quarter-wave spacing array.
+Solve the matching network for a 2-element, quarter-wave spacing array using the K2BT method.
 
 { run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -currents 1,-j -k2bt") }
+
+Solve the matching network for a 2-element, quarter-wave spacing array using a power divider method.
+
+{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -currents 1,-j -divider") }
 
 """)
 

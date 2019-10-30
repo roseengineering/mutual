@@ -163,8 +163,8 @@ def print_drive(zij, data):
         ei[i], ii[i] = multiply(tline(np.rad2deg(np.angle(x)), zo=np.abs(x)), [ei[i], ii[i]])
     if data.get("k2bt"): 
         return solve(ei, ii, data)
-    elif data.get("ohmslaw"): 
-        return solve(ei, ii, data, ohmslaw=True)
+    elif data.get("divider"): 
+        return solve(ei, ii, data, divider=True)
     else:
         zi = ei / ii
         ztot = parallel(zi)
@@ -199,8 +199,8 @@ def main(*args):
             kw["autoload"] = True
         elif opt == '-k2bt':
             kw["k2bt"] = True
-        elif opt == '-ohmslaw':
-            kw["ohmslaw"] = True
+        elif opt == '-divider':
+            kw["divider"] = True
         elif opt == '-freq':
             kw["frequencies"] = [ np.double(x) for x in args.pop(0).split(',') ]
         elif opt == '-loss':
@@ -282,7 +282,7 @@ def component(x, f, precision=5):
     return "%6.4g%s%s" % (np.absolute(value), SUFFIX[p-4], UNITS[0 if x < 0 else 1])
 
 
-def solve(ei, ii, data, ohmslaw=False):
+def solve(ei, ii, data, divider=False):
     n = len(ei)
     freq = data["frequency"]
     zi = ei / ii
@@ -299,7 +299,10 @@ def solve(ei, ii, data, ohmslaw=False):
 
     power = np.abs(ii**2) * zi.real
     feede = np.sqrt(data["power"] * data["feed"])
-    feedr = [ 50 ] * n if ohmslaw else [ feede**2 / w for w in power ]
+    if divider:
+        feedr = [ 50 ] * n 
+    else:
+        feedr = [ feede**2 / w for w in power ]
     match = [ np.concatenate([ lmatch(zi[i], feedr[i]), lmatch(zi[i], feedr[i], 'r') ]) for i in range(n) ]
     combo = np.array([ [ i // (4 ** (n - k - 1)) % 4 for k in range(n) ] for i in range(4 ** n) ])
 
