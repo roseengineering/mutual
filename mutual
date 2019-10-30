@@ -370,7 +370,7 @@ def solve(ei, ii, data, divider=False):
                     print('{:9.4f} {:8.3f}'.format(np.abs(line[i][0]), np.rad2deg(np.angle(line[i][0]))), end=" ")
 
                     v = line[i]
-                    theta = np.rad2deg(np.angle(line[ref][0]) - np.angle(v[0]))
+                    theta = np.rad2deg(np.angle(v[0]) - np.angle(line[ref][0]))
                     theta = np.mod(theta + 180, 360) - 180
                     print('{:8.3f}'.format(theta), end=" ")
 
@@ -380,37 +380,37 @@ def solve(ei, ii, data, divider=False):
                         if i == ref:
                             print('{:>8s} {:>8s}  -'.format('-', '-'), end=" ")
                         elif hw == 1:
-                            xs, xp = pishift(90, zo.real)
+                            xs, xp = pishift(-90, zo.real)
                             v = pinet(v, xs, xp)
                             print('{:>8s} {:>8s} -P'.format(component(xp, freq), component(xs, freq)), end=" ")
                         elif hw == 2:
-                            xs, xp = pishift(-90, zo.real)
+                            xs, xp = pishift(90, zo.real)
                             v = pinet(v, xs, xp)
                             print('{:>8s} {:>8s} +P'.format(component(xp, freq), component(xs, freq)), end=" ")
                         elif hw == 3:
-                            xs, xp = teeshift(90, zo.real)
+                            xs, xp = teeshift(-90, zo.real)
                             v = teenet(v, xs, xp)
                             print('{:>8s} {:>8s} -T'.format(component(xs, freq), component(xp, freq)), end=" ")
                         elif hw == 4:
-                            xs, xp = teeshift(-90, zo.real)
+                            xs, xp = teeshift(90, zo.real)
                             v = teenet(v, xs, xp)
                             print('{:>8s} {:>8s} +T'.format(component(xs, freq), component(xp, freq)), end=" ")
 
-                        theta = np.rad2deg(np.angle(line[ref][0]) - np.angle(v[0]))
+                        theta = np.rad2deg(np.angle(v[0]) - np.angle(line[ref][0]))
                         theta = np.mod(theta + 180, 360) - 180
                         print('{:8.3f}'.format(theta), end=" ")
 
                     ######################################
 
                     memory = v
-                    xs, xp = pishift(theta, zo.real)
+                    xs, xp = pishift(-theta, zo.real)
                     print('{:>8s} {:>8s}'.format(component(xp, freq), component(xs, freq)), end=" ")
                     if i != ref: v = pinet(v, xs, xp)
                     if data.get("debug"): print('%.4f' % np.abs(np.angle(v[0]) - np.angle(line[ref][0])), end=" ")
                     if data.get("debug"): print('%.4f' % (np.abs(v[1])**2 * (v[0]/v[1]).real), end=" ")
 
                     v = memory
-                    xs, xp = teeshift(theta, zo.real)
+                    xs, xp = teeshift(-theta, zo.real)
                     print('| {:>8s} {:>8s}'.format(component(xs, freq), component(xp, freq)), end=" ")
                     if i != ref: v = teenet(v, xs, xp)
                     if data.get("debug"): print('%.4f' % np.abs(np.angle(v[0]) - np.angle(line[ref][0])), end=" ")
