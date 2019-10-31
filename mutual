@@ -297,6 +297,10 @@ def teeshift(theta, zo):
     return xs, xp
 
 
+def watts(v):
+    return np.abs(v[1])**2 * (v[0]/v[1]).real
+
+
 def pinet(v, xs, xp):
     v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
     v = multiply([[1, 1j*xs], [0, 1]], v)        # series
@@ -337,7 +341,7 @@ def solve(ei, ii, data, divider=False):
     print("! MHZ  LINE               ZA       X1         X2          ZTUNE         ELINE        DPHASE", end="")
     if data.get("halfwave"): 
         print('        HALFWAVE        DPHASE', end="")
-    print("  SHUNTPI SERIESPI  SERIESTEE SHUNTTEE   DPHASE")
+    print("  SHUNTPI SERIESPI  SERIESTEE SHUNTTEE   DPHASE   POWER")
 
     for d in combo:
         net = np.array([ match[i][k] for i, k in enumerate(d) ])
@@ -406,20 +410,18 @@ def solve(ei, ii, data, divider=False):
                     xs, xp = pishift(-theta, zo.real)
                     print('{:>8s} {:>8s}'.format(component(xp, freq), component(xs, freq)), end=" ")
                     if i != ref: v = pinet(v, xs, xp)
-                    if data.get("debug"): print('%.4f' % np.abs(np.angle(v[0]) - np.angle(line[ref][0])), end=" ")
-                    if data.get("debug"): print('%.4f' % (np.abs(v[1])**2 * (v[0]/v[1]).real), end=" ")
+                    if data.get("debug"): print('%8.3f' % np.abs(np.angle(v[0]) - np.angle(line[ref][0])), end=" ")
+                    if data.get("debug"): print('%7.3f' % watts(v), end=" ")
 
                     v = memory
                     xs, xp = teeshift(-theta, zo.real)
                     print('| {:>8s} {:>8s}'.format(component(xs, freq), component(xp, freq)), end=" ")
                     if i != ref: v = teenet(v, xs, xp)
-                    if data.get("debug"): print('%.4f' % np.abs(np.angle(v[0]) - np.angle(line[ref][0])), end=" ")
-                    if data.get("debug"): print('%.4f' % (np.abs(v[1])**2 * (v[0]/v[1]).real), end=" ")
 
                     theta = np.rad2deg(np.angle(v[0]) - np.angle(line[ref][0]))
                     theta = np.mod(theta + 180, 360) - 180
                     print('{:8.3f}'.format(theta), end=" ")
-                    print()
+                    print('{:7.3f}'.format(watts(v)))
 
 
 if __name__ == "__main__":
