@@ -161,10 +161,8 @@ def print_drive(zij, data):
     for i, x in enumerate(data["tlines"]):
         x = to_complex(x, f=frequency, vf=data["vf"])
         ei[i], ii[i] = multiply(tline(np.rad2deg(np.angle(x)), zo=np.abs(x)), [ei[i], ii[i]])
-    if data.get("k2bt"): 
+    if data.get("k2bt") or data.get("divider1"): 
         return solve(ei, ii, data)
-    elif data.get("divider"): 
-        return solve(ei, ii, data, divider=True)
     else:
         zi = ei / ii
         ztot = parallel(zi)
@@ -201,8 +199,8 @@ def main(*args):
             kw["autoload"] = True
         elif opt == '-k2bt':
             kw["k2bt"] = True
-        elif opt == '-divider':
-            kw["divider"] = True
+        elif opt == '-divider1':
+            kw["divider1"] = True
         elif opt == '-freq':
             kw["frequencies"] = [ np.double(x) for x in args.pop(0).split(',') ]
         elif opt == '-loss':
@@ -314,7 +312,7 @@ def teenet(v, xs, xp):
     return v
 
 
-def solve(ei, ii, data, divider=False):
+def solve(ei, ii, data):
     n = len(ei)
     freq = data["frequency"]
     zi = ei / ii
@@ -331,17 +329,16 @@ def solve(ei, ii, data, divider=False):
 
     power = np.abs(ii**2) * zi.real
     feede = np.sqrt(data["power"] * data["feed"])
-    if divider:
+    feedr = [ feede**2 / w for w in power ]
+    if data.get("divider1"):
         feedr = [ np.sign(w) * data["feed"] for w in power ]
-    else:
-        feedr = [ feede**2 / w for w in power ]
     match = [ np.concatenate([ lmatch(zi[i], feedr[i]), lmatch(feedr[i], zi[i]) ]) for i in range(n) ]
     combo = np.array([ [ i // (4 ** (n - k - 1)) % 4 for k in range(n) ] for i in range(4 ** n) ])
 
-    print("! MHZ  LINE               ZA       X1         X2          ZTUNE         ELINE        DPHASE", end="")
+    print("! MHZ LINE               ZA       X1         X2          ZTUNE         ELINE        DPHASE", end="")
     if data.get("halfwave"): 
         print('        HALFWAVE        DPHASE', end="")
-    print("  SHUNTPI SERIESPI  SERIESTEE SHUNTTEE   DPHASE   POWER")
+    print("  SHUNTPI SERIESPI  SERIESTEE SHUNTTEE   DPHASE   POWER           ZOUT")
 
     for d in combo:
         net = np.array([ match[i][k] for i, k in enumerate(d) ])
@@ -363,66 +360,98 @@ def solve(ei, ii, data, divider=False):
 
             for hw in (range(5) if data.get("halfwave") else range(1)):          
                 for i, m, reverse in zip(range(n), net, d > 1):
-                    print('{:<8g} {:2d} {:16.5g}'.format(freq, i + 1, zi[i]), end=" ")
+                    print('{:<7g} {:2d} {:16.5g}'.format(freq, i + 1, zi[i]), end="")
                     if reverse:
-                        print('{:>8s} / {:>8s}'.format(component(m[1], freq), component(m[0], freq)), end=" ")
+                        print(' {:>8s} / {:>8s}'.format(component(m[1], freq), component(m[0], freq)), end="")
                     else:
-                        print('{:>8s} \\ {:>8s}'.format(component(m[0], freq), component(m[1], freq)), end=" ")
+                        print(' {:>8s} \\ {:>8s}'.format(component(m[0], freq), component(m[1], freq)), end="")
 
                     zo = line[i][0] / line[i][1]
-                    print('{:14.2f}'.format(zo), end=" ")
-                    print('{:9.4f} {:8.3f}'.format(np.abs(line[i][0]), np.rad2deg(np.angle(line[i][0]))), end=" ")
+                    print(' {:14.2f}'.format(zo), end="")
+                    print(' {:9.4f} {:8.3f}'.format(np.abs(line[i][0]), np.rad2deg(np.angle(line[i][0]))), end="")
 
                     v = line[i]
                     theta = np.rad2deg(np.angle(v[0]) - np.angle(line[ref][0]))
                     theta = np.mod(theta + 180, 360) - 180
-                    print('{:8.3f}'.format(theta), end=" ")
+                    print(' {:8.3f}'.format(theta), end="")
 
+                    # halfwave
                     ######################################
 
                     if data.get("halfwave"):
                         if hw == 0 or i == ref:
-                            print('{:>8s} {:>8s}   '.format('-', '-'), end=" ")
+                            print(' {:>8s} {:>8s}   '.format('-', '-'), end="")
                         elif hw == 1:
                             xs, xp = pishift(-90, zo.real)
                             v = pinet(v, xs, xp)
-                            print('{:>8s} {:>8s} -P'.format(component(xp, freq), component(xs, freq)), end=" ")
+                            print(' {:>8s} {:>8s} -P'.format(component(xp, freq), component(xs, freq)), end="")
                         elif hw == 2:
                             xs, xp = pishift(90, zo.real)
                             v = pinet(v, xs, xp)
-                            print('{:>8s} {:>8s} +P'.format(component(xp, freq), component(xs, freq)), end=" ")
+                            print(' {:>8s} {:>8s} +P'.format(component(xp, freq), component(xs, freq)), end="")
                         elif hw == 3:
                             xs, xp = teeshift(-90, zo.real)
                             v = teenet(v, xs, xp)
-                            print('{:>8s} {:>8s} -T'.format(component(xs, freq), component(xp, freq)), end=" ")
+                            print(' {:>8s} {:>8s} -T'.format(component(xs, freq), component(xp, freq)), end="")
                         elif hw == 4:
                             xs, xp = teeshift(90, zo.real)
                             v = teenet(v, xs, xp)
-                            print('{:>8s} {:>8s} +T'.format(component(xs, freq), component(xp, freq)), end=" ")
+                            print(' {:>8s} {:>8s} +T'.format(component(xs, freq), component(xp, freq)), end="")
 
                         theta = np.rad2deg(np.angle(v[0]) - np.angle(line[ref][0]))
                         theta = np.mod(theta + 180, 360) - 180
-                        print('{:8.3f}'.format(theta), end=" ")
+                        print(' {:8.3f}'.format(theta), end="")
 
+                    # phase shift
                     ######################################
 
                     memory = v
                     xs, xp = pishift(-theta, zo.real)
-                    print('{:>8s} {:>8s}'.format(component(xp, freq), component(xs, freq)), end=" ")
-                    if i != ref: v = pinet(v, xs, xp)
-                    if data.get("debug"): print('%8.3f' % np.abs(np.angle(v[0]) - np.angle(line[ref][0])), end=" ")
-                    if data.get("debug"): print('%7.3f' % watts(v), end=" ")
+                    print(' {:>8s} {:>8s}'.format(component(xp, freq), component(xs, freq)), end="")
+                    if i != ref and not np.isnan(xs) and not np.isnan(xp): v = pinet(v, xs, xp)
+                    assert(np.abs(np.angle(v[0]) - np.angle(line[ref][0])) < 1e-4)
 
                     v = memory
                     xs, xp = teeshift(-theta, zo.real)
-                    print('| {:>8s} {:>8s}'.format(component(xs, freq), component(xp, freq)), end=" ")
-                    if i != ref: v = teenet(v, xs, xp)
+                    print(' | {:>8s} {:>8s}'.format(component(xs, freq), component(xp, freq)), end="")
+                    if i != ref and not np.isnan(xs) and not np.isnan(xp): v = teenet(v, xs, xp)
+                    assert(np.abs(np.angle(v[0]) - np.angle(line[ref][0])) < 1e-4)
+
+                    # results
+                    ######################################
 
                     theta = np.rad2deg(np.angle(v[0]) - np.angle(line[ref][0]))
                     theta = np.mod(theta + 180, 360) - 180
-                    print('{:8.3f}'.format(theta), end=" ")
-                    print('{:7.3f}'.format(watts(v)))
+                    print(' {:8.3f}'.format(theta), end="")
+                    print(' {:7.3f}'.format(watts(v)), end="")
+                    print(' {:14.2f}'.format(v[0]/v[1]), end="")
+                    print()
 
+                    """
+                    if divider:
+                        memory = v
+                        zo = feede**2 / power[i]
+                        res = [ lmatch(v[0]/v[1], zo), lmatch(zo, v[0]/v[1]) ]
+                        for reverse in range(2): # normal or reverse
+                            for k in range(2):
+                                m = res[reverse][k]
+                                if not np.isnan(m[0]):
+                                    v = memory
+                                    print('{:>8s} {:s} {:>8s}'.format(component(m[0], freq), '/' if reverse else '\\', component(m[1], freq)), end=" ")
+                                    if reverse:
+                                        v = multiply([[1, 1j*m[1]], [0, 1]], v)        # series
+                                        v = multiply([[1, 0], [1 / (1j*m[0]), 1]], v)  # shunt
+                                    else:
+                                        v = multiply([[1, 0], [1 / (1j*m[0]), 1]], v)  # shunt
+                                        v = multiply([[1, 1j*m[1]], [0, 1]], v)        # series
+                                    theta = np.rad2deg(np.angle(v[0]) - np.angle(line[ref][0]))
+                                    theta = np.mod(theta + 180, 360) - 180
+                                    print('{:14.2f}'.format(v[0]/v[1]), end=" ")
+                                    print('{:8.3f}'.format(theta), end=" ")
+                                    # print('{:7.3f}'.format(watts(v)), end=" ")
+                    """
+
+                    
 
 if __name__ == "__main__":
     import sys
