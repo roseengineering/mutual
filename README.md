@@ -27,8 +27,8 @@ The program takes the following command line options:
 -segs      : number of segments to divide the simulated vertical into
 -autoload  : automatically base load the element vertical antenna
 -el        : x,y location of a vertical antenna element
--currents  : list of antenna elements currents j or / complex notation
--tlines    : list of transmission lines in j or / complex notation (used with currents)
+-current   : list of antenna elements currents j or / complex notation
+-tline     : list of transmission lines in j or / complex notation (used with currents)
            : ... for divider1 and divider2 lines are between tuning unit and phaser
 -vf        : velocity factor of the transmission line if angle given in feet or meters
 -tie       : list of lines to tie together
@@ -151,7 +151,7 @@ The Orr design above but solving with element currents using / complex notation.
 
 
 ```
-$ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -currents 1,1/-90
+$ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -current 1,1/-90
 ! MHZ Z RI R 1
 7.1       28.7024 -17.6418j,  60.4668 +19.6511j
 ! E in MA notation =  33.6906 -31.5768,  63.5799 -71.9963
@@ -164,7 +164,7 @@ $ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -curr
 
 
 ```
-$ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -currents 1,-j
+$ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -current 1,-j
 ! MHZ Z RI R 1
 7.1       28.7024 -17.6418j,  60.4668 +19.6511j
 ! E in MA notation =  33.6906 -31.5768,  63.5799 -71.9963
@@ -177,7 +177,7 @@ The Orr design above with the Christman matching transmission lines.
 
 
 ```
-$ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -currents 1,-j -tlines 75/90.64,75/176.205
+$ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -current 1,-j -tline 75/90.64,75/176.205
 ! MHZ Z RI R 1
 7.1      145.9689 +86.2965j,  58.5139 +17.5013j
 ! E in MA notation =  75.1931  90.2443,  62.0860 103.6427
@@ -190,7 +190,7 @@ $ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -curr
 
 
 ```
-$ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -currents 1,-j -tlines 75/23.19ft,75/45.10ft
+$ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -current 1,-j -tline 75/23.19ft,75/45.10ft
 ! MHZ Z RI R 1
 7.1      149.5365 +85.0475j,  59.1250 +18.2238j
 ! E in MA notation =  75.3683  90.4743,  62.5679 105.1016
@@ -203,7 +203,7 @@ The Orr desgin above but with 90 degree transmission lines to the elements for c
 
 
 ```
-$ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -currents 1,-j -tlines 75/90,75/90
+$ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -current 1,-j -tline 75/90,75/90
 ! MHZ Z RI R 1
 7.1      142.2399 +87.4274j,  84.1395 -27.3445j
 ! E in MA notation =  75.0000  90.0000,  75.0000  -0.0000
@@ -228,7 +228,7 @@ All designs from Orr on page 149.
 
 
 ```
-$ mutual -loss 9 -diam .7in -freq 3.6  -height 66.8ft -el 0,0 -el 70.28ft,0 -currents 1,-j -tlines 75/46.39ft,75/92.77ft
+$ mutual -loss 9 -diam .7in -freq 3.6  -height 66.8ft -el 0,0 -el 70.28ft,0 -current 1,-j -tline 75/46.39ft,75/92.77ft
 ! MHZ Z RI R 1
 3.6      179.3650 +51.4636j,  66.4021 +29.2599j
 ! E in MA notation =  75.4356  90.9908,  70.2040 118.1315
@@ -238,7 +238,7 @@ $ mutual -loss 9 -diam .7in -freq 3.6  -height 66.8ft -el 0,0 -el 70.28ft,0 -cur
 
 
 ```
-$ mutual -loss 9 -diam .7in -freq 7.1  -height 33.4ft -el 0,0 -el 35.14ft,0 -currents 1,-j -tlines 75/23.19ft,75/45.10ft
+$ mutual -loss 9 -diam .7in -freq 7.1  -height 33.4ft -el 0,0 -el 35.14ft,0 -current 1,-j -tline 75/23.19ft,75/45.10ft
 ! MHZ Z RI R 1
 7.1      149.5365 +85.0475j,  59.1250 +18.2238j
 ! E in MA notation =  75.3683  90.4743,  62.5679 105.1016
@@ -248,7 +248,7 @@ $ mutual -loss 9 -diam .7in -freq 7.1  -height 33.4ft -el 0,0 -el 35.14ft,0 -cur
 
 
 ```
-$ mutual -loss 9 -diam .7in -freq 10.1 -height 23.2ft -el 0,0 -el 24.36ft,0 -currents 1,-j -tlines 75/16.07ft,75/32.15ft
+$ mutual -loss 9 -diam .7in -freq 10.1 -height 23.2ft -el 0,0 -el 24.36ft,0 -current 1,-j -tline 75/16.07ft,75/32.15ft
 ! MHZ Z RI R 1
 10.1     120.4103 +97.3445j,  58.8678 +14.1678j
 ! E in MA notation =  74.9791  89.9803,  60.5585 103.4938
@@ -258,7 +258,7 @@ $ mutual -loss 9 -diam .7in -freq 10.1 -height 23.2ft -el 0,0 -el 24.36ft,0 -cur
 
 
 ```
-$ mutual -loss 9 -diam .7in -freq 14.1 -height 16.7ft -el 0,0 -el 17.57ft,0 -currents 1,-j -tlines 75/11.60ft,75/22.55ft
+$ mutual -loss 9 -diam .7in -freq 14.1 -height 16.7ft -el 0,0 -el 17.57ft,0 -current 1,-j -tline 75/11.60ft,75/22.55ft
 ! MHZ Z RI R 1
 14.1     142.6727 +89.7992j,  58.3616 +16.4840j
 ! E in MA notation =  75.2037  90.2424,  61.5930 102.7736
@@ -271,7 +271,7 @@ Solve the matching network for a 3-element in-line, quarter-wave spacing array u
 
 
 ```
-$ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -el 130ft,0 -currents 1,1/-90,-1 -k2bt
+$ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -el 130ft,0 -current 1,1/-90,-1 -k2bt
 ! MHZ Z RI R 1
 ! MHZ LINE               ZA        LMATCH                ZTUNE         ELINE        DPHASE              PI                          TEE              DPHASE   POWER           ZOUT
 !
@@ -361,7 +361,7 @@ Solve the matching network for a 4-square, quarter-wave spacing array using the 
 
 
 ```
-$ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 0,65ft -el 65ft,0 -el 65ft,65ft -currents 1,-j,-j,-1 -k2bt -tlines 50/100,50/100,50/100,50/100 -tie 2,3
+$ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 0,65ft -el 65ft,0 -el 65ft,65ft -current 1,-j,-j,-1 -k2bt -tline 50/100,50/100,50/100,50/100 -tie 2,3
 ! MHZ Z RI R 1
 ! MHZ LINE               ZA        LMATCH                ZTUNE         ELINE        DPHASE              PI                          TEE              DPHASE   POWER           ZOUT
 !
@@ -643,7 +643,7 @@ Solve the matching network for a 2-element, quarter-wave spacing array using the
 
 
 ```
-$ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -currents 1,-j -k2bt
+$ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -k2bt
 ! MHZ Z RI R 1
 ! MHZ LINE               ZA        LMATCH                ZTUNE         ELINE        DPHASE              PI                          TEE              DPHASE   POWER           ZOUT
 !
@@ -673,7 +673,7 @@ Solve the matching network for a 2-element, quarter-wave spacing array using the
 
 
 ```
-$ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -currents 1,-j -divider1
+$ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -divider1
 ! MHZ Z RI R 1
 ! MHZ LINE               ZA        LMATCH                ZTUNE         ELINE        DPHASE              PI                          TEE              DPHASE   POWER           ZOUT
 !
@@ -703,7 +703,7 @@ Solve the matching network for a 2-element, quarter-wave spacing array using the
 
 
 ```
-$ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -currents 1,-j -divider2 90
+$ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -divider2 90
 ! MHZ Z RI R 1
 ! MHZ LINE               ZA        LMATCH                ZTUNE         ELINE        DPHASE              PI                          TEE              DPHASE   POWER           ZOUT
 !
@@ -730,7 +730,7 @@ $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -currents 1,-j -
 
 
 ```
-$ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -currents 1,-j -divider2 -90
+$ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -divider2 -90
 ! MHZ Z RI R 1
 ! MHZ LINE               ZA        LMATCH                ZTUNE         ELINE        DPHASE              PI                          TEE              DPHASE   POWER           ZOUT
 !
