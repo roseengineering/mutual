@@ -51,7 +51,7 @@ The program takes the following command line options:
 -feed      : transmitter coax feedline impedance, default 50 ohms
 -k2bt      : solve array using K2BT method
 -divider1  : solve array using ohms law method
--divider2  : solve array using tee power divider method, shift reference by given amount 
+-divider2  : solve array using tee power divider method, shift reference by given phase
 ```
 
 Note the -diam, -height, and -el options can take the following suffix modifiers:

@@ -352,8 +352,8 @@ def solve(ei, ii, data):
     match = [ np.concatenate([ lmatch(zi[i], linez[i]), lmatch(linez[i], zi[i]) ]) for i in range(n) ]
     combo = np.array([ [ i // (4 ** (n - k - 1)) % 4 for k in range(n) ] for i in range(4 ** n) ])
 
-    print("! MHZ LINE               ZA        LMATCH                ZTUNE         ELINE        DPHASE", end="")
-    print("              PI                          TEE              DPHASE   POWER           ZOUT")
+    print("! MHZ LINE   POWER               ZA        LMATCH                ZTUNE     ELINE   EPHASE    SHIFT", end="")
+    print("              PI                          TEE              EPHASE   POWER           ZOUT")
 
     for d in combo:
         net = np.array([ match[i][k] for i, k in enumerate(d) ])
@@ -362,7 +362,7 @@ def solve(ei, ii, data):
         print('!')
         for ref in range(n):
 
-            # perform lmatches
+            # tune
 
             line = np.array([ ei, ii ]).T
             pin = [ watts(v) for v in line ]
@@ -375,11 +375,18 @@ def solve(ei, ii, data):
                     line[i] = multiply([[1, 1j*m[1]], [0, 1]], line[i])        # series
             zo = line[:,0] / line[:,1]
 
+            # transmission line lengths
+
+            if not data.get("k2bt") and data.get("tline"):
+                x = to_complex(data["tline"][i], f=frequency, vf=data["vf"])
+                line[i] = multiply(tline(np.rad2deg(np.angle(x)), zo=np.abs(x)), line[i])
+
             ################
 
             for i, m, reverse in zip(range(n), net, d > 1):
 
                 print('{:<7g} {:2d}'.format(frequency, i + 1), end="")
+                print(' {:7.3f}'.format(pin[i]), end="")
                 print(' {:16.5g}'.format(zi[i]), end="")
 
                 if reverse:
@@ -390,16 +397,12 @@ def solve(ei, ii, data):
                 print(' {:14.2f}'.format(zo[i]), end="")
                 assert(np.abs(zo[i].imag) < 1e-3) 
 
-                if not data.get("k2bt") and data.get("tline"):
-                    x = to_complex(data["tline"][i], f=frequency, vf=data["vf"])
-                    line[i] = multiply(tline(np.rad2deg(np.angle(x)), zo=np.abs(x)), line[i])
-
                 print(' {:9.4f} {:8.3f}'.format(np.abs(line[i][0]), np.rad2deg(np.angle(line[i][0]))), end="")
 
                 ref_theta = np.angle(line[ref][0])
                 zfeed = zo[i].real
                 if data.get("divider2") is not None:
-                    ref_theta -= np.deg2rad(data.get("divider2"))
+                    ref_theta += np.deg2rad(data.get("divider2"))
                     zfeed = feede**2 / power[i] 
 
                 theta = np.rad2deg(np.angle(line[i][0]) - ref_theta)
@@ -412,19 +415,19 @@ def solve(ei, ii, data):
                 x1, x2, x3 = pishift(-theta, zo[i].real, zfeed)
                 print(' {:>8s} {:>8s} {:>8s}'.format(component(x1, frequency), component(x2, frequency), component(x3, frequency)), end="")
                 if np.abs(theta) > 1e-3: v = pinet(v, x1, x2, x3)
-                # assert(np.abs((v[0]/v[1]).imag) < 1e-3) 
-                # assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
+                assert(np.abs((v[0]/v[1]).imag) < 1e-3) 
+                assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
 
                 v = line[i]
                 x1, x2, x3 = teeshift(-theta, zo[i].real, zfeed)
                 print(' | {:>8s} {:>8s} {:>8s}'.format(component(x1, frequency), component(x2, frequency), component(x3, frequency)), end="")
                 if np.abs(theta) > 1e-3: v = teenet(v, x1, x2, x3)
-                # assert(np.abs((v[0]/v[1]).imag) < 1e-3) 
-                # assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
+                assert(np.abs((v[0]/v[1]).imag) < 1e-3) 
+                assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
 
                 # results
 
-                theta = np.rad2deg(np.angle(v[0]) - ref_theta)
+                theta = np.rad2deg(np.angle(v[0])) #  - ref_theta)
                 theta = np.mod(theta + 180, 360) - 180
                 print(' {:8.3f}'.format(theta), end="")
                 print(' {:7.3f}'.format(watts(v)), end="")
