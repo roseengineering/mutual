@@ -47,19 +47,19 @@ def run_nec(text):
 
 def generate_input(data, voltages):
     frequency = data["frequency"]
-    elements = data['elements']
+    element = data['element']
     height = data['height']
     radius = data["diameter"] / 2
     losses = data["losses"]
     loading = data["loading"]
     segments = data["segments"]
     text = ""
-    n = len(elements)
+    n = len(element)
     for i in range(n):
         tag = i + 1
         fmt = "GW {tag} {segments} {x:g} {y:g} 0 {x:g} {y:g} {height} {radius}\n"
         text += fmt.format(tag=tag, segments=segments, 
-                           x=elements[i][0], y=elements[i][1], 
+                           x=element[i][0], y=element[i][1], 
                            height=height, radius=radius)
     text += "GE 1\n"  # ground plane is present
     text += "GN 1\n"  # perfect ground
@@ -81,7 +81,7 @@ def multiply(zij, ii):
 
 
 def autoload(data):
-    d = { "elements": [ (0, 0) ] }
+    d = { "element": [ (0, 0) ] }
     ei = [ 1 ]
     ii = run_nec(generate_input(dict(data, **d), ei))
     zself = 1 / ii[0]
@@ -90,7 +90,7 @@ def autoload(data):
 
 
 def mutual(data):
-    n = len(data["elements"])
+    n = len(data["element"])
     zij = np.zeros((n, n), dtype=np.complex)
     for k in range(n):
         ei = np.ones(n) * 1e-20
@@ -155,7 +155,7 @@ def tline(deg, zo=50):
 def print_drive(zij, data):
     n = zij.shape[0]
     frequency = data["frequency"]
-    ii = np.array(data["currents"])
+    ii = np.array(data["current"])
     ei = multiply(zij, ii)
 
     if data.get("divider1") or data.get("divider2") is not None:
@@ -163,9 +163,10 @@ def print_drive(zij, data):
 
     # tlines
 
-    for i, x in enumerate(data["tlines"]):
-        x = to_complex(x, f=frequency, vf=data["vf"])
-        ei[i], ii[i] = multiply(tline(np.rad2deg(np.angle(x)), zo=np.abs(x)), [ei[i], ii[i]])
+    if data.get("tline"):
+        for i, x in enumerate(data["tline"]):
+            x = to_complex(x, f=frequency, vf=data["vf"])
+            ei[i], ii[i] = multiply(tline(np.rad2deg(np.angle(x)), zo=np.abs(x)), [ei[i], ii[i]])
 
     if data.get("k2bt"):
         return solve(ei, ii, data)
@@ -194,7 +195,7 @@ def print_mutual(zij, data):
    
 def main(*args):
     args = list(args)
-    kw = { "elements": [], "tlines": [] }
+    kw = { "element": [] }
     while args:
         opt = args.pop(0)
         if opt == '-debug':
@@ -220,13 +221,13 @@ def main(*args):
         elif opt == '-diam':
             kw["diameter"] = to_distance(args.pop(0))
         elif opt == '-el':
-            kw["elements"].append([ to_distance(x) for x in args.pop(0).split(',') ])
-        elif opt == '-currents':
-            kw["currents"] = [ to_complex(x) for x in args.pop(0).split(',') ]
+            kw["element"].append([ to_distance(x) for x in args.pop(0).split(',') ])
+        elif opt == '-current':
+            kw["current"] = [ to_complex(x) for x in args.pop(0).split(',') ]
         elif opt == '-tie':
             kw["tie"] = [ np.int(x) for x in args.pop(0).split(',') ]
-        elif opt == '-tlines':
-            kw["tlines"] = args.pop(0).split(',')
+        elif opt == '-tline':
+            kw["tline"] = args.pop(0).split(',')
         elif opt == '-vf':
             kw["vf"] = np.double(args.pop(0))
         elif opt == '-power':
@@ -234,7 +235,7 @@ def main(*args):
         elif opt == '-feed':
             kw["feed"] = np.double(args.pop(0))
         else:
-            raise ValueError
+            raise ValueError("unknown option:", opt)
 
     kw = dict(defaults, **kw)
     print("! MHZ Z RI R 1")
@@ -250,7 +251,7 @@ def main(*args):
             error_norm(zij, kw)
 
         # display results
-        if kw.get("currents"):
+        if kw.get("current"):
             print_drive(zij, kw)
         else:
             print_mutual(zij, kw)
@@ -374,13 +375,6 @@ def solve(ei, ii, data):
                     line[i] = multiply([[1, 1j*m[1]], [0, 1]], line[i])        # series
             zo = line[:,0] / line[:,1]
 
-            # add transmission lines if not k2bt method
-
-            if not data.get("k2bt"):
-                for i, x in enumerate(data["tlines"]):
-                    x = to_complex(x, f=frequency, vf=data["vf"])
-                    line[i] = multiply(tline(np.rad2deg(np.angle(x)), zo=np.abs(x)), line[i])
-
             ################
 
             for i, m, reverse in zip(range(n), net, d > 1):
@@ -394,8 +388,13 @@ def solve(ei, ii, data):
                     print(' {:>8s} \\ {:>8s}'.format(component(m[0], frequency), component(m[1], frequency)), end="")
 
                 print(' {:14.2f}'.format(zo[i]), end="")
-                print(' {:9.4f} {:8.3f}'.format(np.abs(line[i][0]), np.rad2deg(np.angle(line[i][0]))), end="")
                 assert(np.abs(zo[i].imag) < 1e-3) 
+
+                if not data.get("k2bt") and data.get("tline"):
+                    x = to_complex(data["tline"][i], f=frequency, vf=data["vf"])
+                    line[i] = multiply(tline(np.rad2deg(np.angle(x)), zo=np.abs(x)), line[i])
+
+                print(' {:9.4f} {:8.3f}'.format(np.abs(line[i][0]), np.rad2deg(np.angle(line[i][0]))), end="")
 
                 ref_theta = np.angle(line[ref][0])
                 zfeed = zo[i].real
@@ -413,15 +412,15 @@ def solve(ei, ii, data):
                 x1, x2, x3 = pishift(-theta, zo[i].real, zfeed)
                 print(' {:>8s} {:>8s} {:>8s}'.format(component(x1, frequency), component(x2, frequency), component(x3, frequency)), end="")
                 if np.abs(theta) > 1e-3: v = pinet(v, x1, x2, x3)
-                assert(np.abs((v[0]/v[1]).imag) < 1e-3) 
-                assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
+                # assert(np.abs((v[0]/v[1]).imag) < 1e-3) 
+                # assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
 
                 v = line[i]
                 x1, x2, x3 = teeshift(-theta, zo[i].real, zfeed)
                 print(' | {:>8s} {:>8s} {:>8s}'.format(component(x1, frequency), component(x2, frequency), component(x3, frequency)), end="")
                 if np.abs(theta) > 1e-3: v = teenet(v, x1, x2, x3)
-                assert(np.abs((v[0]/v[1]).imag) < 1e-3) 
-                assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
+                # assert(np.abs((v[0]/v[1]).imag) < 1e-3) 
+                # assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
 
                 # results
 
