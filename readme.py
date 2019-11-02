@@ -49,9 +49,9 @@ The program takes the following command line options:
 -debug     : show current error norm when simulating the array and other information
 -power     : transmitter power output, default 100 watts
 -feed      : transmitter coax feedline impedance, default 50 ohms
--k2bt      : solve array using K2BT method
--divider1  : solve array using ohms law method, shift reference by given phase
--divider2  : solve array using tee power divider method, shift reference by given phase
+-k2bt      : solve phase budget using K2BT method
+-divider1  : solve phase budget using ohms law method, shift reference by given phase
+-divider2  : solve phase budget using tee power divider method, shift reference by given phase
 ```
 
 Note the -diam, -height, and -el options can take the following suffix modifiers:
