@@ -157,23 +157,29 @@ def print_drive(zij, data):
     frequency = data["frequency"]
     ii = np.array(data["currents"])
     ei = multiply(zij, ii)
-    # handle tlines
+
+    if data.get("divider1") or data.get("divider2") is not None:
+        return solve(ei, ii, data)
+
+    # tlines
+
     for i, x in enumerate(data["tlines"]):
         x = to_complex(x, f=frequency, vf=data["vf"])
         ei[i], ii[i] = multiply(tline(np.rad2deg(np.angle(x)), zo=np.abs(x)), [ei[i], ii[i]])
-    if data.get("k2bt") or data.get("divider1") or data.get("divider2") is not None:
+
+    if data.get("k2bt"):
         return solve(ei, ii, data)
-    else:
-        zi = ei / ii
-        ztot = parallel(zi)
-        print('{:<8g}'.format(frequency), end="")
-        print(','.join([ ' {:8.4f} {:+8.4f}j'.format(x.real, x.imag) for x in zi ]))
-        print('! E in MA notation =', end="")
-        print(','.join([ ' {:8.4f} {:8.4f}'.format(np.abs(x), np.rad2deg(np.angle(x))) for x in ei ]))
-        print('! I in MA notation =', end="")
-        print(','.join([ ' {:8.4f} {:8.4f}'.format(np.abs(x), np.rad2deg(np.angle(x))) for x in ii ]))
-        print('! Z in parallel    =', end="")
-        print(' {:8.4f} {:+8.4f}j'.format(ztot.real, ztot.imag))
+
+    zi = ei / ii
+    ztot = parallel(zi)
+    print('{:<8g}'.format(frequency), end="")
+    print(','.join([ ' {:8.4f} {:+8.4f}j'.format(x.real, x.imag) for x in zi ]))
+    print('! E in MA notation =', end="")
+    print(','.join([ ' {:8.4f} {:8.4f}'.format(np.abs(x), np.rad2deg(np.angle(x))) for x in ei ]))
+    print('! I in MA notation =', end="")
+    print(','.join([ ' {:8.4f} {:8.4f}'.format(np.abs(x), np.rad2deg(np.angle(x))) for x in ii ]))
+    print('! Z in parallel    =', end="")
+    print(' {:8.4f} {:+8.4f}j'.format(ztot.real, ztot.imag))
 
 
 def print_mutual(zij, data):
@@ -232,8 +238,8 @@ def main(*args):
 
     kw = dict(defaults, **kw)
     print("! MHZ Z RI R 1")
-    for freq in kw["frequencies"]:
-        kw["frequency"] = freq
+    for frequency in kw["frequencies"]:
+        kw["frequency"] = frequency
 
         if kw.get('autoload'):
             autoload(kw)
@@ -318,7 +324,7 @@ def teenet(v, x1, x2, x3):
 
 def solve(ei, ii, data):
     n = len(ei)
-    freq = data["frequency"]
+    frequency = data["frequency"]
 
     zi = ei / ii
     power = np.abs(ii**2) * zi.real
@@ -327,18 +333,20 @@ def solve(ei, ii, data):
     ei *= ratio
     ii *= ratio
     power = np.abs(ii**2) * zi.real
-    tie = data.get("tie", [])
 
-    if tie:
-        isum = np.sum([ ii[i-1] for i in data["tie"] ])
-        for i in data["tie"]: ii[i-1] = isum
-        zi = ei / ii
-        power = np.abs(ii**2) * zi.real
+    # impedances to tune lines to
 
-    if data.get("divider1") or data.get("divider2") is not None:
-        linez = [ np.sign(w) * data["feed"] for w in power ]
-    else:
+    if data.get("k2bt"):
+        if data.get("tie"):
+            isum = np.sum([ ii[i-1] for i in data["tie"] ])
+            for i in data["tie"]: ii[i-1] = isum
+            zi = ei / ii
+            power = np.abs(ii**2) * zi.real
         linez = [ feede**2 / w for w in power ]
+    else:
+        linez = [ np.sign(w) * data["feed"] for w in power ]
+
+    # tune lines
 
     match = [ np.concatenate([ lmatch(zi[i], linez[i]), lmatch(linez[i], zi[i]) ]) for i in range(n) ]
     combo = np.array([ [ i // (4 ** (n - k - 1)) % 4 for k in range(n) ] for i in range(4 ** n) ])
@@ -353,6 +361,8 @@ def solve(ei, ii, data):
         print('!')
         for ref in range(n):
 
+            # perform lmatches
+
             line = np.array([ ei, ii ]).T
             pin = [ watts(v) for v in line ]
             for i, m, reverse in zip(range(n), net, d > 1):
@@ -364,22 +374,28 @@ def solve(ei, ii, data):
                     line[i] = multiply([[1, 1j*m[1]], [0, 1]], line[i])        # series
             zo = line[:,0] / line[:,1]
 
+            # add transmission lines if not k2bt method
+
+            if not data.get("k2bt"):
+                for i, x in enumerate(data["tlines"]):
+                    x = to_complex(x, f=frequency, vf=data["vf"])
+                    line[i] = multiply(tline(np.rad2deg(np.angle(x)), zo=np.abs(x)), line[i])
+
             ################
 
             for i, m, reverse in zip(range(n), net, d > 1):
 
-                print('{:<7g} {:2d}'.format(freq, i + 1), end="")
+                print('{:<7g} {:2d}'.format(frequency, i + 1), end="")
                 print(' {:16.5g}'.format(zi[i]), end="")
-                # print(' {:7.3f}'.format(pin[i]), end="")
 
                 if reverse:
-                    print(' {:>8s} / {:>8s}'.format(component(m[1], freq), component(m[0], freq)), end="")
+                    print(' {:>8s} / {:>8s}'.format(component(m[1], frequency), component(m[0], frequency)), end="")
                 else:
-                    print(' {:>8s} \\ {:>8s}'.format(component(m[0], freq), component(m[1], freq)), end="")
+                    print(' {:>8s} \\ {:>8s}'.format(component(m[0], frequency), component(m[1], frequency)), end="")
 
-                assert(np.abs(zo[i].imag) < 1e-3) 
                 print(' {:14.2f}'.format(zo[i]), end="")
                 print(' {:9.4f} {:8.3f}'.format(np.abs(line[i][0]), np.rad2deg(np.angle(line[i][0]))), end="")
+                assert(np.abs(zo[i].imag) < 1e-3) 
 
                 ref_theta = np.angle(line[ref][0])
                 zfeed = zo[i].real
@@ -395,14 +411,14 @@ def solve(ei, ii, data):
 
                 v = line[i]
                 x1, x2, x3 = pishift(-theta, zo[i].real, zfeed)
-                print(' {:>8s} {:>8s} {:>8s}'.format(component(x1, freq), component(x2, freq), component(x3, freq)), end="")
+                print(' {:>8s} {:>8s} {:>8s}'.format(component(x1, frequency), component(x2, frequency), component(x3, frequency)), end="")
                 if np.abs(theta) > 1e-3: v = pinet(v, x1, x2, x3)
                 assert(np.abs((v[0]/v[1]).imag) < 1e-3) 
                 assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
 
                 v = line[i]
                 x1, x2, x3 = teeshift(-theta, zo[i].real, zfeed)
-                print(' | {:>8s} {:>8s} {:>8s}'.format(component(x1, freq), component(x2, freq), component(x3, freq)), end="")
+                print(' | {:>8s} {:>8s} {:>8s}'.format(component(x1, frequency), component(x2, frequency), component(x3, frequency)), end="")
                 if np.abs(theta) > 1e-3: v = teenet(v, x1, x2, x3)
                 assert(np.abs((v[0]/v[1]).imag) < 1e-3) 
                 assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)

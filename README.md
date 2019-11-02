@@ -29,6 +29,7 @@ The program takes the following command line options:
 -el        : x,y location of a vertical antenna element
 -currents  : list of antenna elements currents j or / complex notation
 -tlines    : list of transmission lines in j or / complex notation (used with currents)
+           : ... for divider1 and divider2 lines are between tuning unit and phaser
 -vf        : velocity factor of the transmission line if angle given in feet or meters
 -tie       : list of lines to tie together
 -debug     : show current error norm when simulating the array and other information
