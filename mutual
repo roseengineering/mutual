@@ -352,7 +352,7 @@ def solve(ei, ii, data):
     match = [ np.concatenate([ lmatch(zi[i], linez[i]), lmatch(linez[i], zi[i]) ]) for i in range(n) ]
     combo = np.array([ [ i // (4 ** (n - k - 1)) % 4 for k in range(n) ] for i in range(4 ** n) ])
 
-    print("! MHZ LINE   POWER               ZA        LMATCH          ZTUNE        ELINE          SHIFT", end="")
+    print("! MHZ LINE   POWER               ZA        LMATCH          ZTUNE        ELINE         PHASOR", end="")
     print("              PI                          TEE                   ELINE         POWER     ZOUT")
 
     for d in combo:
@@ -401,29 +401,30 @@ def solve(ei, ii, data):
 
                 ref_theta = np.angle(line[ref][0])
                 zfeed = zo[i].real
+
                 if data.get("divider2") is not None:
                     ref_theta += np.deg2rad(data.get("divider2"))
                     zfeed = feede**2 / power[i] 
 
-                theta = np.rad2deg(np.angle(line[i][0]) - ref_theta)
+                theta = np.rad2deg(ref_theta - np.angle(line[i][0]))
                 theta = np.mod(theta + 180, 360) - 180
                 print(' {:8.3f}'.format(theta), end="")
 
                 # phase shift
 
                 v = line[i]
-                x1, x2, x3 = pishift(-theta, zo[i].real, zfeed)
+                x1, x2, x3 = pishift(theta, zo[i].real, zfeed)
                 print(' {:>8s} {:>8s} {:>8s}'.format(component(x1, frequency), component(x2, frequency), component(x3, frequency)), end="")
                 if np.abs(theta) > 1e-3: v = pinet(v, x1, x2, x3)
                 assert(np.abs((v[0]/v[1]).imag) < 1e-3) 
-                assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
+                assert(np.abs(np.mod(np.rad2deg(ref_theta - np.angle(v[0])) + 180, 360) - 180) < 1e-3)
 
                 v = line[i]
-                x1, x2, x3 = teeshift(-theta, zo[i].real, zfeed)
+                x1, x2, x3 = teeshift(theta, zo[i].real, zfeed)
                 print(' | {:>8s} {:>8s} {:>8s}'.format(component(x1, frequency), component(x2, frequency), component(x3, frequency)), end="")
                 if np.abs(theta) > 1e-3: v = teenet(v, x1, x2, x3)
                 assert(np.abs((v[0]/v[1]).imag) < 1e-3) 
-                assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
+                assert(np.abs(np.mod(np.rad2deg(ref_theta - np.angle(v[0])) + 180, 360) - 180) < 1e-3)
 
                 # results
 
