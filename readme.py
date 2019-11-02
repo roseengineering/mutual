@@ -50,7 +50,7 @@ The program takes the following command line options:
 -power     : transmitter power output, default 100 watts
 -feed      : transmitter coax feedline impedance, default 50 ohms
 -k2bt      : solve array using K2BT method
--divider1  : solve array using ohms law method
+-divider1  : solve array using ohms law method, shift reference by given phase
 -divider2  : solve array using tee power divider method, shift reference by given phase
 ```
 
@@ -138,7 +138,8 @@ Solve the matching network for a 2-element, quarter-wave spacing array using the
 
 Solve the matching network for a 2-element, quarter-wave spacing array using the ohms law power divider method.
 
-{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -divider1") }
+{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -divider1 0") }
+{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -divider1 90") }
 
 Solve the matching network for a 2-element, quarter-wave spacing array using the tee power divider method.
 
