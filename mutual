@@ -161,7 +161,7 @@ def print_drive(zij, data):
     for i, x in enumerate(data["tlines"]):
         x = to_complex(x, f=frequency, vf=data["vf"])
         ei[i], ii[i] = multiply(tline(np.rad2deg(np.angle(x)), zo=np.abs(x)), [ei[i], ii[i]])
-    if data.get("k2bt") or data.get("divider1") or data.get("divider2") or data.get("divider3"): 
+    if data.get("k2bt") or data.get("divider1") or data.get("divider2") is not None:
         return solve(ei, ii, data)
     else:
         zi = ei / ii
@@ -200,9 +200,7 @@ def main(*args):
         elif opt == '-divider1':
             kw["divider1"] = True
         elif opt == '-divider2':
-            kw["divider2"] = True
-        elif opt == '-divider3':
-            kw["divider3"] = True
+            kw["divider2"] = np.double(args.pop(0))
         elif opt == '-freq':
             kw["frequencies"] = [ np.double(x) for x in args.pop(0).split(',') ]
         elif opt == '-loss':
@@ -337,7 +335,7 @@ def solve(ei, ii, data):
         zi = ei / ii
         power = np.abs(ii**2) * zi.real
 
-    if data.get("divider1") or data.get("divider2") or data.get("divider2"):
+    if data.get("divider1") or data.get("divider2") is not None:
         linez = [ np.sign(w) * data["feed"] for w in power ]
     else:
         linez = [ feede**2 / w for w in power ]
@@ -383,10 +381,12 @@ def solve(ei, ii, data):
                 print(' {:14.2f}'.format(zo[i]), end="")
                 print(' {:9.4f} {:8.3f}'.format(np.abs(line[i][0]), np.rad2deg(np.angle(line[i][0]))), end="")
 
-                zfeed = feede**2 / power[i] if data.get("divider2") or data.get("divider3") else zo[i].real
                 ref_theta = np.angle(line[ref][0])
-                if data.get("divider2"): ref_theta -= np.pi / 2
-                if data.get("divider3"): ref_theta += np.pi / 2
+                zfeed = zo[i].real
+                if data.get("divider2") is not None:
+                    ref_theta -= np.deg2rad(data.get("divider2"))
+                    zfeed = feede**2 / power[i] 
+
                 theta = np.rad2deg(np.angle(line[i][0]) - ref_theta)
                 theta = np.mod(theta + 180, 360) - 180
                 print(' {:8.3f}'.format(theta), end="")

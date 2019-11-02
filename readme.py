@@ -48,10 +48,9 @@ The program takes the following command line options:
 -debug     : show current error norm when simulating the array and other information
 -power     : transmitter power output, default 100 watts
 -feed      : transmitter coax feedline impedance, default 50 ohms
--k2bt      : solve matching networks for the array using K2BT method
--divider1  : solve matching networks for the array using ohms law method
--divider2  : solve matching networks for the array using tee power divider method (+90)
--divider3  : solve matching networks for the array using tee power divider method (-90)
+-k2bt      : solve array using K2BT method
+-divider1  : solve array using ohms law method
+-divider2  : solve array using tee power divider method, shift reference by given amount 
 ```
 
 Note the -diam, -height, and -el options can take the following suffix modifiers:
@@ -142,8 +141,8 @@ Solve the matching network for a 2-element, quarter-wave spacing array using the
 
 Solve the matching network for a 2-element, quarter-wave spacing array using the tee power divider method.
 
-{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -currents 1,-j -divider2") }
-{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -currents 1,-j -divider3") }
+{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -currents 1,-j -divider2 90") }
+{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -currents 1,-j -divider2 -90") }
 """)
 
 
