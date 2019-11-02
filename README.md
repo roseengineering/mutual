@@ -37,7 +37,7 @@ The program takes the following command line options:
 -feed      : transmitter coax feedline impedance, default 50 ohms
 -k2bt      : solve phase budget using K2BT method
 -divider1  : solve phase budget using ohms law method, shift reference by given phase
--divider2  : solve phase budget using tee power divider method, shift reference by given phase
+-divider2  : solve phase budget using tee network method, shift reference by given phase
 ```
 
 Note the -diam, -height, and -el options can take the following suffix modifiers:
