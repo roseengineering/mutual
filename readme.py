@@ -50,7 +50,8 @@ The program takes the following command line options:
 -feed      : transmitter coax feedline impedance, default 50 ohms
 -k2bt      : solve matching networks for the array using K2BT method
 -divider1  : solve matching networks for the array using ohms law method
--halfwave  : use a halfwave pi or tee network when matching
+-divider2  : solve matching networks for the array using tee power divider method (+90)
+-divider3  : solve matching networks for the array using tee power divider method (-90)
 ```
 
 Note the -diam, -height, and -el options can take the following suffix modifiers:
@@ -135,13 +136,14 @@ Solve the matching network for a 2-element, quarter-wave spacing array using the
 
 { run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -currents 1,-j -k2bt") }
 
-Solve the matching network for a 2-element, quarter-wave spacing array using the power divider method.
+Solve the matching network for a 2-element, quarter-wave spacing array using the ohms law power divider method.
 
 { run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -currents 1,-j -divider1") }
 
-Use a halfwave section for fine adjustments before phase shifting circuits.
+Solve the matching network for a 2-element, quarter-wave spacing array using the tee power divider method.
 
-{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -currents 1,-j -divider1 -halfwave") }
+{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -currents 1,-j -divider2") }
+{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -currents 1,-j -divider3") }
 """)
 
 

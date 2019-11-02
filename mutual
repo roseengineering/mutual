@@ -161,7 +161,7 @@ def print_drive(zij, data):
     for i, x in enumerate(data["tlines"]):
         x = to_complex(x, f=frequency, vf=data["vf"])
         ei[i], ii[i] = multiply(tline(np.rad2deg(np.angle(x)), zo=np.abs(x)), [ei[i], ii[i]])
-    if data.get("k2bt") or data.get("divider1"): 
+    if data.get("k2bt") or data.get("divider1") or data.get("divider2") or data.get("divider3"): 
         return solve(ei, ii, data)
     else:
         zi = ei / ii
@@ -193,14 +193,16 @@ def main(*args):
         opt = args.pop(0)
         if opt == '-debug':
             kw["debug"] = True
-        elif opt == '-halfwave':
-            kw["halfwave"] = True
         elif opt == '-autoload':
             kw["autoload"] = True
         elif opt == '-k2bt':
             kw["k2bt"] = True
         elif opt == '-divider1':
             kw["divider1"] = True
+        elif opt == '-divider2':
+            kw["divider2"] = True
+        elif opt == '-divider3':
+            kw["divider3"] = True
         elif opt == '-freq':
             kw["frequencies"] = [ np.double(x) for x in args.pop(0).split(',') ]
         elif opt == '-loss':
@@ -278,67 +280,73 @@ def component(x, f, precision=5):
     mant = np.round(x / 10**exp, precision-1)
     p = np.int(exp // 3)
     value = (mant * 10**exp) / 10**(3 * p)
-    return "%6.4g%s%s" % (np.absolute(value), SUFFIX[p-4], UNITS[0 if x < 0 else 1])
+    if p - 4 >= 0 or p - 4 < -len(SUFFIX):
+        return "%7.2g%s" % (np.absolute(x), UNITS[0 if x < 0 else 1])
+    else:
+        return "%6.4g%s%s" % (np.absolute(value), SUFFIX[p-4], UNITS[0 if x < 0 else 1])
 
 
-def pishift(theta, zo):
+def pishift(theta, r1, r2):
+    x1, x2, x3 = teeshift(theta, 1/r1, 1/r2)
+    return -1/x1, -1/x2, -1/x3
+
+
+def teeshift(theta, r1, r2):
     theta = np.deg2rad(theta)
-    xs = zo.real * np.sin(theta)
-    xp = -zo.real * np.sin(theta) / (1 - np.cos(theta))
-    return xs, xp
-
-
-def teeshift(theta, zo):
-    theta = np.deg2rad(theta)
-    xs = zo.real * (1 - np.cos(theta)) / np.sin(theta)
-    xp = -zo.real / np.sin(theta)
-    return xs, xp
+    zo = np.sqrt(np.abs(r1 * r2))
+    x1 = np.sign(r1) * (zo - np.abs(r1) * np.cos(theta)) / np.sin(theta)
+    x2 = np.sign(r1) * -zo / np.sin(theta)
+    x3 = np.sign(r1) * (zo - np.abs(r2) * np.cos(theta)) / np.sin(theta)
+    return x1, x2, x3
 
 
 def watts(v):
     return np.abs(v[1])**2 * (v[0]/v[1]).real
 
 
-def pinet(v, xs, xp):
-    v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
-    v = multiply([[1, 1j*xs], [0, 1]], v)        # series
-    v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
+def pinet(v, x1, x2, x3):
+    v = multiply([[1, 0], [1 / (1j*x1), 1]], v)  # shunt
+    v = multiply([[1, 1j*x2], [0, 1]], v)        # series
+    v = multiply([[1, 0], [1 / (1j*x3), 1]], v)  # shunt
     return v
 
-def teenet(v, xs, xp):
-    v = multiply([[1, 1j*xs], [0, 1]], v)        # series
-    v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
-    v = multiply([[1, 1j*xs], [0, 1]], v)        # series
+
+def teenet(v, x1, x2, x3):
+    v = multiply([[1, 1j*x1], [0, 1]], v)        # series
+    v = multiply([[1, 0], [1 / (1j*x2), 1]], v)  # shunt
+    v = multiply([[1, 1j*x3], [0, 1]], v)        # series
     return v
 
 
 def solve(ei, ii, data):
     n = len(ei)
     freq = data["frequency"]
-    zi = ei / ii
 
+    zi = ei / ii
     power = np.abs(ii**2) * zi.real
+    feede = np.sqrt(data["power"] * data["feed"])
     ratio = np.sqrt(data["power"] / np.sum(power))
     ei *= ratio
     ii *= ratio
+    power = np.abs(ii**2) * zi.real
+    tie = data.get("tie", [])
 
-    if data.get("tie"):
+    if tie:
         isum = np.sum([ ii[i-1] for i in data["tie"] ])
         for i in data["tie"]: ii[i-1] = isum
         zi = ei / ii
+        power = np.abs(ii**2) * zi.real
 
-    power = np.abs(ii**2) * zi.real
-    feede = np.sqrt(data["power"] * data["feed"])
-    feedr = [ feede**2 / w for w in power ]
-    if data.get("divider1"):
-        feedr = [ np.sign(w) * data["feed"] for w in power ]
-    match = [ np.concatenate([ lmatch(zi[i], feedr[i]), lmatch(feedr[i], zi[i]) ]) for i in range(n) ]
+    if data.get("divider1") or data.get("divider2") or data.get("divider2"):
+        linez = [ np.sign(w) * data["feed"] for w in power ]
+    else:
+        linez = [ feede**2 / w for w in power ]
+
+    match = [ np.concatenate([ lmatch(zi[i], linez[i]), lmatch(linez[i], zi[i]) ]) for i in range(n) ]
     combo = np.array([ [ i // (4 ** (n - k - 1)) % 4 for k in range(n) ] for i in range(4 ** n) ])
 
-    print("! MHZ LINE               ZA       X1         X2          ZTUNE         ELINE        DPHASE", end="")
-    if data.get("halfwave"): 
-        print('        HALFWAVE        DPHASE', end="")
-    print("  SHUNTPI SERIESPI  SERIESTEE SHUNTTEE   DPHASE   POWER           ZOUT")
+    print("! MHZ LINE               ZA        LMATCH                ZTUNE         ELINE        DPHASE", end="")
+    print("              PI                          TEE              DPHASE   POWER           ZOUT")
 
     for d in combo:
         net = np.array([ match[i][k] for i, k in enumerate(d) ])
@@ -347,9 +355,8 @@ def solve(ei, ii, data):
         print('!')
         for ref in range(n):
 
-            # tune all tower lines for phase shifting
-
             line = np.array([ ei, ii ]).T
+            pin = [ watts(v) for v in line ]
             for i, m, reverse in zip(range(n), net, d > 1):
                 if reverse:
                     line[i] = multiply([[1, 1j*m[1]], [0, 1]], line[i])        # series
@@ -357,105 +364,61 @@ def solve(ei, ii, data):
                 else:
                     line[i] = multiply([[1, 0], [1 / (1j*m[0]), 1]], line[i])  # shunt
                     line[i] = multiply([[1, 1j*m[1]], [0, 1]], line[i])        # series
+            zo = line[:,0] / line[:,1]
 
-            for hw in (range(5) if data.get("halfwave") else range(1)):          
-                for i, m, reverse in zip(range(n), net, d > 1):
-                    print('{:<7g} {:2d} {:16.5g}'.format(freq, i + 1, zi[i]), end="")
-                    if reverse:
-                        print(' {:>8s} / {:>8s}'.format(component(m[1], freq), component(m[0], freq)), end="")
-                    else:
-                        print(' {:>8s} \\ {:>8s}'.format(component(m[0], freq), component(m[1], freq)), end="")
+            ################
 
-                    zo = line[i][0] / line[i][1]
-                    print(' {:14.2f}'.format(zo), end="")
-                    print(' {:9.4f} {:8.3f}'.format(np.abs(line[i][0]), np.rad2deg(np.angle(line[i][0]))), end="")
+            for i, m, reverse in zip(range(n), net, d > 1):
 
-                    v = line[i]
-                    theta = np.rad2deg(np.angle(v[0]) - np.angle(line[ref][0]))
-                    theta = np.mod(theta + 180, 360) - 180
-                    print(' {:8.3f}'.format(theta), end="")
+                print('{:<7g} {:2d}'.format(freq, i + 1), end="")
+                print(' {:16.5g}'.format(zi[i]), end="")
+                # print(' {:7.3f}'.format(pin[i]), end="")
 
-                    # halfwave
-                    ######################################
+                if reverse:
+                    print(' {:>8s} / {:>8s}'.format(component(m[1], freq), component(m[0], freq)), end="")
+                else:
+                    print(' {:>8s} \\ {:>8s}'.format(component(m[0], freq), component(m[1], freq)), end="")
 
-                    if data.get("halfwave"):
-                        if hw == 0 or i == ref:
-                            print(' {:>8s} {:>8s}   '.format('-', '-'), end="")
-                        elif hw == 1:
-                            xs, xp = pishift(-90, zo.real)
-                            v = pinet(v, xs, xp)
-                            print(' {:>8s} {:>8s} -P'.format(component(xp, freq), component(xs, freq)), end="")
-                        elif hw == 2:
-                            xs, xp = pishift(90, zo.real)
-                            v = pinet(v, xs, xp)
-                            print(' {:>8s} {:>8s} +P'.format(component(xp, freq), component(xs, freq)), end="")
-                        elif hw == 3:
-                            xs, xp = teeshift(-90, zo.real)
-                            v = teenet(v, xs, xp)
-                            print(' {:>8s} {:>8s} -T'.format(component(xs, freq), component(xp, freq)), end="")
-                        elif hw == 4:
-                            xs, xp = teeshift(90, zo.real)
-                            v = teenet(v, xs, xp)
-                            print(' {:>8s} {:>8s} +T'.format(component(xs, freq), component(xp, freq)), end="")
+                assert(np.abs(zo[i].imag) < 1e-3) 
+                print(' {:14.2f}'.format(zo[i]), end="")
+                print(' {:9.4f} {:8.3f}'.format(np.abs(line[i][0]), np.rad2deg(np.angle(line[i][0]))), end="")
 
-                        theta = np.rad2deg(np.angle(v[0]) - np.angle(line[ref][0]))
-                        theta = np.mod(theta + 180, 360) - 180
-                        print(' {:8.3f}'.format(theta), end="")
+                zfeed = feede**2 / power[i] if data.get("divider2") or data.get("divider3") else zo[i].real
+                ref_theta = np.angle(line[ref][0])
+                if data.get("divider2"): ref_theta -= np.pi / 2
+                if data.get("divider3"): ref_theta += np.pi / 2
+                theta = np.rad2deg(np.angle(line[i][0]) - ref_theta)
+                theta = np.mod(theta + 180, 360) - 180
+                print(' {:8.3f}'.format(theta), end="")
 
-                    # phase shift
-                    ######################################
+                # phase shift
 
-                    memory = v
-                    xs, xp = pishift(-theta, zo.real)
-                    print(' {:>8s} {:>8s}'.format(component(xp, freq), component(xs, freq)), end="")
-                    if i != ref and not np.isnan(xs) and not np.isnan(xp): v = pinet(v, xs, xp)
-                    assert(np.abs(np.angle(v[0]) - np.angle(line[ref][0])) < 1e-4)
+                v = line[i]
+                x1, x2, x3 = pishift(-theta, zo[i].real, zfeed)
+                print(' {:>8s} {:>8s} {:>8s}'.format(component(x1, freq), component(x2, freq), component(x3, freq)), end="")
+                if np.abs(theta) > 1e-3: v = pinet(v, x1, x2, x3)
+                assert(np.abs((v[0]/v[1]).imag) < 1e-3) 
+                assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
 
-                    v = memory
-                    xs, xp = teeshift(-theta, zo.real)
-                    print(' | {:>8s} {:>8s}'.format(component(xs, freq), component(xp, freq)), end="")
-                    if i != ref and not np.isnan(xs) and not np.isnan(xp): v = teenet(v, xs, xp)
-                    assert(np.abs(np.angle(v[0]) - np.angle(line[ref][0])) < 1e-4)
+                v = line[i]
+                x1, x2, x3 = teeshift(-theta, zo[i].real, zfeed)
+                print(' | {:>8s} {:>8s} {:>8s}'.format(component(x1, freq), component(x2, freq), component(x3, freq)), end="")
+                if np.abs(theta) > 1e-3: v = teenet(v, x1, x2, x3)
+                assert(np.abs((v[0]/v[1]).imag) < 1e-3) 
+                assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
 
-                    # results
-                    ######################################
+                # results
 
-                    theta = np.rad2deg(np.angle(v[0]) - np.angle(line[ref][0]))
-                    theta = np.mod(theta + 180, 360) - 180
-                    print(' {:8.3f}'.format(theta), end="")
-                    print(' {:7.3f}'.format(watts(v)), end="")
-                    print(' {:14.2f}'.format(v[0]/v[1]), end="")
-                    print()
+                theta = np.rad2deg(np.angle(v[0]) - ref_theta)
+                theta = np.mod(theta + 180, 360) - 180
+                print(' {:8.3f}'.format(theta), end="")
+                print(' {:7.3f}'.format(watts(v)), end="")
+                print(' {:14.2f}'.format(v[0]/v[1]), end="")
+                print()
 
-                    """
-                    if divider:
-                        memory = v
-                        zo = feede**2 / power[i]
-                        res = [ lmatch(v[0]/v[1], zo), lmatch(zo, v[0]/v[1]) ]
-                        for reverse in range(2): # normal or reverse
-                            for k in range(2):
-                                m = res[reverse][k]
-                                if not np.isnan(m[0]):
-                                    v = memory
-                                    print('{:>8s} {:s} {:>8s}'.format(component(m[0], freq), '/' if reverse else '\\', component(m[1], freq)), end=" ")
-                                    if reverse:
-                                        v = multiply([[1, 1j*m[1]], [0, 1]], v)        # series
-                                        v = multiply([[1, 0], [1 / (1j*m[0]), 1]], v)  # shunt
-                                    else:
-                                        v = multiply([[1, 0], [1 / (1j*m[0]), 1]], v)  # shunt
-                                        v = multiply([[1, 1j*m[1]], [0, 1]], v)        # series
-                                    theta = np.rad2deg(np.angle(v[0]) - np.angle(line[ref][0]))
-                                    theta = np.mod(theta + 180, 360) - 180
-                                    print('{:14.2f}'.format(v[0]/v[1]), end=" ")
-                                    print('{:8.3f}'.format(theta), end=" ")
-                                    # print('{:7.3f}'.format(watts(v)), end=" ")
-                    """
-
-                    
 
 if __name__ == "__main__":
     import sys
     np.seterr(divide='ignore', invalid='ignore')
     main(*sys.argv[1:])
-
 
