@@ -352,8 +352,8 @@ def solve(ei, ii, data):
     match = [ np.concatenate([ lmatch(zi[i], linez[i]), lmatch(linez[i], zi[i]) ]) for i in range(n) ]
     combo = np.array([ [ i // (4 ** (n - k - 1)) % 4 for k in range(n) ] for i in range(4 ** n) ])
 
-    print("! MHZ LINE   POWER               ZA        LMATCH                ZTUNE     ELINE   EPHASE    SHIFT", end="")
-    print("              PI                          TEE              EPHASE   POWER           ZOUT")
+    print("! MHZ LINE   POWER               ZA        LMATCH          ZTUNE        ELINE          SHIFT", end="")
+    print("              PI                          TEE                   ELINE         POWER     ZOUT")
 
     for d in combo:
         net = np.array([ match[i][k] for i, k in enumerate(d) ])
@@ -394,7 +394,7 @@ def solve(ei, ii, data):
                 else:
                     print(' {:>8s} \\ {:>8s}'.format(component(m[0], frequency), component(m[1], frequency)), end="")
 
-                print(' {:14.2f}'.format(zo[i]), end="")
+                print(' {:8.2f}'.format(zo[i].real), end="")
                 assert(np.abs(zo[i].imag) < 1e-3) 
 
                 print(' {:9.4f} {:8.3f}'.format(np.abs(line[i][0]), np.rad2deg(np.angle(line[i][0]))), end="")
@@ -427,11 +427,11 @@ def solve(ei, ii, data):
 
                 # results
 
-                theta = np.rad2deg(np.angle(v[0])) #  - ref_theta)
-                theta = np.mod(theta + 180, 360) - 180
-                print(' {:8.3f}'.format(theta), end="")
+                zout = v[0] / v[1]
+                print(' {:9.4f} {:8.3f}'.format(np.abs(v[0]), np.rad2deg(np.angle(v[0]))), end="")
                 print(' {:7.3f}'.format(watts(v)), end="")
-                print(' {:14.2f}'.format(v[0]/v[1]), end="")
+                print(' {:8.2f}'.format(zout.real), end="")
+                assert(np.abs(zout.imag) < 1e-3) 
                 assert(np.abs(watts(v) - pin[i]) < 1e-3)
                 print()
 
