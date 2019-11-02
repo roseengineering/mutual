@@ -432,6 +432,7 @@ def solve(ei, ii, data):
                 print(' {:8.3f}'.format(theta), end="")
                 print(' {:7.3f}'.format(watts(v)), end="")
                 print(' {:14.2f}'.format(v[0]/v[1]), end="")
+                assert(np.abs(watts(v) - pin[i]) < 1e-3)
                 print()
 
 
