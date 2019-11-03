@@ -400,8 +400,7 @@ def solve(ei, ii, data):
 
             ################
 
-            for option in range(2):
-              for i, m, reverse in zip(range(n), net, d > 1):
+            for i, m, reverse in zip(range(n), net, d > 1):
 
                 print('{:<7g} {:2d}'.format(frequency, i + 1), end="")
                 print(' {:7.3f}'.format(pin[i]), end="")
@@ -425,7 +424,6 @@ def solve(ei, ii, data):
                     ref_theta -= np.deg2rad(data.get("divider"))
 
                 theta = np.rad2deg(np.angle(line[i][0]) - ref_theta)
-                theta = theta + 360 if option else theta
                 theta = np.mod(theta + 180, 360) - 180
 
                 # phase shift
