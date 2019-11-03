@@ -364,9 +364,8 @@ def solve(ei, ii, data):
     match = [ np.concatenate([ lmatch(zi[i], linez[i]), lmatch(linez[i], zi[i]) ]) for i in range(n) ]
     combo = np.array([ [ i // (4 ** (n - k - 1)) % 4 for k in range(n) ] for i in range(4 ** n) ])
 
-    print("! MHZ LINE   POWER               ZA        LMATCH                  ZIN        ELINE       ", end="")
-    print("             PI                          TEE                      EOUT              ZOUT    POWER   PHASOR", end="")
-    # if data.get("divider1") is not None or data.get("divider2") is not None: print("     OPTIMAL")
+    print("! MHZ LINE   POWER               ZA        LMATCH                  ZIN        ELINE                    ", end="")
+    print("PI                          TEE              PHASOR         EOUT                  ZOUT   POWER", end="")
     print()
 
     for d in combo:
@@ -444,16 +443,12 @@ def solve(ei, ii, data):
                 # results
 
                 zout = v[0] / v[1]
+                print(' {:8.3f}{:1s}'.format(theta, '*' if np.abs(theta) > 100 else ''), end="")
                 print(' {:9.4f} {:8.3f}'.format(np.abs(v[0]), np.rad2deg(np.angle(v[0]))), end="")
                 print(' {:14.2f}'.format(zout), end="")
                 print(' {:7.3f}'.format(watts(v)), end="")
                 assert(np.abs(zout.imag) < 1e-3) 
                 assert(np.abs(watts(v) - pin[i]) < 1e-3)
-
-                # phasor
-
-                print(' {:8.3f}{:1s}'.format(theta, '*' if np.abs(theta) > 100 else ''), end="")
-                # if data.get("divider1") is not None or data.get("divider2") is not None: print(' / {:8.3f}'.format(np.rad2deg(optimal[i])), end="")
                 print()
 
 
