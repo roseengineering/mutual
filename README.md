@@ -274,7 +274,7 @@ Solve the matching network for a 3-element in-line, quarter-wave spacing array u
 ```
 $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -el 130ft,0 -current 1,1/-90,-1 -k2bt
 ! MHZ Z RI R 1
-! MHZ LINE   POWER               ZA        LMATCH                ZTUNE        ELINE         PHASOR              PI                          TEE                   ELINE         POWER           ZOUT
+! MHZ LINE   POWER               ZA        LMATCH                ZTUNE        ELINE         PHASOR               PI                          TEE                   ELINE         POWER           ZOUT
 !
 3.8      1  23.299   28.685-2.7644j  596.1pF /   3.53uH   214.60+0.00j   70.7107  -68.555    0.000         -        -        - |        -        -        -   70.7107  -68.555  23.299   214.60+0.00j
 3.8      2  28.615    35.23+1.4898j    585pF /  3.678uH   174.73+0.00j   70.7107 -153.319  -84.764   218.7pF  7.288uH  218.7pF |  6.678uH  238.7pF  6.678uH   70.7107  -68.555  28.615   174.73-0.00j
@@ -364,7 +364,7 @@ Solve the matching network for a 4-square, quarter-wave spacing array using the 
 ```
 $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 0,65ft -el 65ft,0 -el 65ft,65ft -current 1,-j,-j,-1 -k2bt -tline 50/100,50/100,50/100,50/100 -tie 2,3
 ! MHZ Z RI R 1
-! MHZ LINE   POWER               ZA        LMATCH                ZTUNE        ELINE         PHASOR              PI                          TEE                   ELINE         POWER           ZOUT
+! MHZ LINE   POWER               ZA        LMATCH                ZTUNE        ELINE         PHASOR               PI                          TEE                   ELINE         POWER           ZOUT
 !
 3.8      1  -0.936  -79.963+397.27j  10.53uH /   63.6pF -5342.59+0.00j   70.7107   85.395    0.000         -        -        - |        -        -        -   70.7107   85.395  -0.936 -5342.59+0.00j
 3.8      2  58.172    30.225+10.96j  805.4pF /  2.651uH    85.95+0.00j   70.7107  -65.860 -151.255!  1.902nF  1.731uH  1.902nF |  14.05uH  234.3pF  14.05uH   70.7107   85.395  58.172    85.95-0.00j
@@ -646,7 +646,7 @@ Solve the matching network for a 2-element, quarter-wave spacing array using the
 ```
 $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -k2bt
 ! MHZ Z RI R 1
-! MHZ LINE   POWER               ZA        LMATCH                ZTUNE        ELINE         PHASOR              PI                          TEE                   ELINE         POWER           ZOUT
+! MHZ LINE   POWER               ZA        LMATCH                ZTUNE        ELINE         PHASOR               PI                          TEE                   ELINE         POWER           ZOUT
 !
 3.8      1  28.178   20.156-17.471j  1.079nF /   2.66uH   177.44-0.00j   70.7107  -70.304    0.000         -        -        - |        -        -        -   70.7107  -70.304  28.178   177.44-0.00j
 3.8      2  71.822   51.376+20.782j  814.9pF /  4.893uH    69.62-0.00j   70.7107 -120.789  -50.485   283.6pF  2.249uH  283.6pF |  1.375uH  464.1pF  1.375uH   70.7107  -70.304  71.822    69.62+0.00j
@@ -676,7 +676,7 @@ Solve the matching network for a 2-element, quarter-wave spacing array using the
 ```
 $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -divider1 0
 ! MHZ Z RI R 1
-! MHZ LINE   POWER               ZA        LMATCH                ZTUNE        ELINE         PHASOR              PI                          TEE                   ELINE         POWER           ZOUT
+! MHZ LINE   POWER               ZA        LMATCH                ZTUNE        ELINE         PHASOR               PI                          TEE                   ELINE         POWER           ZOUT
 !
 3.8      1  28.178   20.156-17.471j  5.936nF /  1.721uH    50.00+0.00j   37.5353  -50.586    0.000         -        -        - |        -        -        -   37.5353  -50.586  28.178    50.00+0.00j
 3.8      2  71.822   51.376+20.782j  66.21uH \  1.894nF    50.00-0.00j   59.9258  -91.837  -41.252   315.3pF  1.381uH  315.3pF |  788.2nH  552.3pF  788.2nH   59.9258  -50.586  71.822    50.00+0.00j
@@ -703,7 +703,7 @@ $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -d
 ```
 $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -divider1 90
 ! MHZ Z RI R 1
-! MHZ LINE   POWER               ZA        LMATCH                ZTUNE        ELINE         PHASOR              PI                          TEE                   ELINE         POWER           ZOUT
+! MHZ LINE   POWER               ZA        LMATCH                ZTUNE        ELINE         PHASOR               PI                          TEE                   ELINE         POWER           ZOUT
 !
 3.8      1  28.178   20.156-17.471j  5.936nF /  1.721uH    50.00+0.00j   37.5353  -50.586   90.000   2.094uH  837.7pF  2.094uH |  837.7pF  2.094uH  837.7pF   37.5353 -140.586  28.178    50.00-0.00j
 3.8      2  71.822   51.376+20.782j  66.21uH \  1.894nF    50.00-0.00j   59.9258  -91.837   48.748   4.622uH  1.114nF  4.622uH |  1.849nF  2.785uH  1.849nF   59.9258 -140.586  71.822    50.00+0.00j
@@ -733,7 +733,7 @@ Solve the matching network for a 2-element, quarter-wave spacing array using the
 ```
 $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -divider2 90
 ! MHZ Z RI R 1
-! MHZ LINE   POWER               ZA        LMATCH                ZTUNE        ELINE         PHASOR              PI                          TEE                   ELINE         POWER           ZOUT
+! MHZ LINE   POWER               ZA        LMATCH                ZTUNE        ELINE         PHASOR               PI                          TEE                   ELINE         POWER           ZOUT
 !
 3.8      1  28.178   20.156-17.471j  5.936nF /  1.721uH    50.00+0.00j   37.5353  -50.586   90.000   3.945uH  444.7pF  3.945uH |  444.7pF  3.945uH  444.7pF   70.7107 -140.586  28.178   177.44-0.00j
 3.8      2  71.822   51.376+20.782j  66.21uH \  1.894nF    50.00-0.00j   59.9258  -91.837   48.748    8.37uH  944.2pF  4.211uH |   1.21nF  3.287uH  2.405nF   70.7107 -140.586  71.822    69.62+0.00j
@@ -760,7 +760,7 @@ $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -d
 ```
 $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -divider2 -90
 ! MHZ Z RI R 1
-! MHZ LINE   POWER               ZA        LMATCH                ZTUNE        ELINE         PHASOR              PI                          TEE                   ELINE         POWER           ZOUT
+! MHZ LINE   POWER               ZA        LMATCH                ZTUNE        ELINE         PHASOR               PI                          TEE                   ELINE         POWER           ZOUT
 !
 3.8      1  28.178   20.156-17.471j  5.936nF /  1.721uH    50.00+0.00j   37.5353  -50.586  -90.000   444.7pF  3.945uH  444.7pF |  3.945uH  444.7pF  3.945uH   70.7107   39.414  28.178   177.44-0.00j
 3.8      2  71.822   51.376+20.782j  66.21uH \  1.894nF    50.00-0.00j   59.9258  -91.837 -131.252!  1.679nF  1.858uH  1.472nF |  5.123uH  533.7pF  5.844uH   70.7107   39.414  71.822    69.62+0.00j

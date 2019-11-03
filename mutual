@@ -362,7 +362,7 @@ def solve(ei, ii, data):
     combo = np.array([ [ i // (4 ** (n - k - 1)) % 4 for k in range(n) ] for i in range(4 ** n) ])
 
     print("! MHZ LINE   POWER               ZA        LMATCH                ZTUNE        ELINE         PHASOR", end="")
-    print("              PI                          TEE                   ELINE         POWER           ZOUT")
+    print("               PI                          TEE                   ELINE         POWER           ZOUT")
 
     for d in combo:
         net = np.array([ match[i][k] for i, k in enumerate(d) ])
