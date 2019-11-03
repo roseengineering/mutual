@@ -258,6 +258,7 @@ def main(*args):
                 error_norm(zij, kw)
 
         # display results
+
         if kw.get("current"):
             print_drive(zij, kw)
         else:
@@ -374,7 +375,6 @@ def solve(ei, ii, data):
 
             line = np.array([ ei, ii ]).T
             pin = [ watts(v) for v in line ]
-            # phase = np.angle(line[:,0])
             for i, m, reverse in zip(range(n), net, d > 1):
                 if reverse:
                     line[i] = multiply([[1, 1j*m[1]], [0, 1]], line[i])        # series
@@ -384,13 +384,7 @@ def solve(ei, ii, data):
                     line[i] = multiply([[1, 1j*m[1]], [0, 1]], line[i])        # series
             zo = line[:,0] / line[:,1]
 
-            # dphase = np.angle(line[:,0]) - phase
-            # print(np.rad2deg(dphase), np.tan(dphase))
-            # for k in range(len(zi)):
-            #      ratio = zi[k].real / zo[k].real
-            #      ratio = 1 / ratio if ratio < 1 else ratio
-            #      print(np.sqrt(ratio - 1), np.rad2deg(np.arctan(np.sqrt(ratio - 1))))
-
+            # print([ np.sqrt(np.max(x) / np.min(x) - 1) for x in zip(zi.real, zo.real) ])
 
             # transmission line lengths
 
