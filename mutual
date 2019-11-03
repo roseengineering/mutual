@@ -339,10 +339,12 @@ def solve(ei, ii, data):
     zi = ei / ii
     power = np.abs(ii**2) * zi.real
     feede = np.sqrt(data["power"] * data["feed"])
+
     ratio = np.sqrt(data["power"] / np.sum(power))
     ei *= ratio
     ii *= ratio
     power = np.abs(ii**2) * zi.real
+    linez = [ feede**2 / w for w in power ]
 
     # impedances to tune lines to
 
@@ -352,8 +354,9 @@ def solve(ei, ii, data):
             for i in data["tie"]: ii[i-1] = isum
             zi = ei / ii
             power = np.abs(ii**2) * zi.real
-        linez = [ feede**2 / w for w in power ]
+            linez = [ feede**2 / w for w in power ]
     else:
+        optimal = np.arctan([ np.sqrt(np.max(x) / np.min(x) - 1) for x in zip(linez, [data["feed"]]*n) ])
         linez = [ np.sign(w) * data["feed"] for w in power ]
 
     # tune lines
@@ -361,8 +364,8 @@ def solve(ei, ii, data):
     match = [ np.concatenate([ lmatch(zi[i], linez[i]), lmatch(linez[i], zi[i]) ]) for i in range(n) ]
     combo = np.array([ [ i // (4 ** (n - k - 1)) % 4 for k in range(n) ] for i in range(4 ** n) ])
 
-    print("! MHZ LINE   POWER               ZA        LMATCH                ZTUNE        ELINE         PHASOR", end="")
-    print("               PI                          TEE                   ELINE         POWER           ZOUT")
+    print("! MHZ LINE   POWER               ZA        LMATCH                ZTUNE        ELINE       ", end="")
+    print("             PI                          TEE              PHASOR         ELINE         POWER           ZOUT")
 
     for d in combo:
         net = np.array([ match[i][k] for i, k in enumerate(d) ])
@@ -383,8 +386,6 @@ def solve(ei, ii, data):
                     line[i] = multiply([[1, 0], [1 / (1j*m[0]), 1]], line[i])  # shunt
                     line[i] = multiply([[1, 1j*m[1]], [0, 1]], line[i])        # series
             zo = line[:,0] / line[:,1]
-
-            # print([ np.sqrt(np.max(x) / np.min(x) - 1) for x in zip(zi.real, zo.real) ])
 
             # transmission line lengths
 
@@ -421,7 +422,6 @@ def solve(ei, ii, data):
 
                 theta = np.rad2deg(np.angle(line[i][0]) - ref_theta)
                 theta = np.mod(theta + 180, 360) - 180
-                print(' {:8.3f}{:1s}'.format(theta, '!' if np.abs(theta) > 100 else ''), end="")
 
                 # phase shift
 
@@ -439,6 +439,10 @@ def solve(ei, ii, data):
                 assert(np.abs((v[0]/v[1]).imag) < 1e-3) 
                 assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
 
+                # phasor
+
+                print(' {:8.3f}{:1s}'.format(theta, '*' if np.abs(theta) > 100 else ''), end="")
+
                 # results
 
                 zout = v[0] / v[1]
@@ -447,6 +451,11 @@ def solve(ei, ii, data):
                 print(' {:14.2f}'.format(zout), end="")
                 assert(np.abs(zout.imag) < 1e-3) 
                 assert(np.abs(watts(v) - pin[i]) < 1e-3)
+
+                if data.get("divider1") is not None or data.get("divider2") is not None:
+                    # print(' {:8.3f}'.format(np.rad2deg(optimal[i])), end="")
+                    pass
+                
                 print()
 
 
