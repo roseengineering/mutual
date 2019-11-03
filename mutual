@@ -400,7 +400,8 @@ def solve(ei, ii, data):
 
             ################
 
-            for i, m, reverse in zip(range(n), net, d > 1):
+            for option in range(2):
+              for i, m, reverse in zip(range(n), net, d > 1):
 
                 print('{:<7g} {:2d}'.format(frequency, i + 1), end="")
                 print(' {:7.3f}'.format(pin[i]), end="")
@@ -424,6 +425,7 @@ def solve(ei, ii, data):
                     ref_theta -= np.deg2rad(data.get("divider"))
 
                 theta = np.rad2deg(np.angle(line[i][0]) - ref_theta)
+                theta = theta + 360 if option else theta
                 theta = np.mod(theta + 180, 360) - 180
 
                 # phase shift
@@ -433,14 +435,14 @@ def solve(ei, ii, data):
                 print(' {:>8s} {:>8s} {:>8s}'.format(component(x1, frequency), component(x2, frequency), component(x3, frequency)), end="")
                 if np.abs(theta) > 1e-3: v = pinet(v, x1, x2, x3)
                 assert(np.abs((v[0]/v[1]).imag) < 1e-3) 
-                assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
+                # assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
 
                 v = line[i]
                 x1, x2, x3 = teeshift(-theta, zo[i].real, zfeed)
                 print(' | {:>8s} {:>8s} {:>8s}'.format(component(x1, frequency), component(x2, frequency), component(x3, frequency)), end="")
                 if np.abs(theta) > 1e-3: v = teenet(v, x1, x2, x3)
                 assert(np.abs((v[0]/v[1]).imag) < 1e-3) 
-                assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
+                # assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
 
                 # results
 
