@@ -159,7 +159,7 @@ def print_drive(zij, data):
     ii = np.array(data["current"])
     ei = multiply(zij, ii)
 
-    if data.get("divider1") is not None or data.get("divider2") is not None:
+    if data.get("divider") is not None:
         return solve(ei, ii, data)
 
     # tlines
@@ -208,9 +208,13 @@ def main(*args):
         elif opt == '-z':
             kw["z"] = [ np.complex(x) for x in args.pop(0).split(',') ]
         elif opt == '-divider1':
-            kw["divider1"] = np.double(args.pop(0))
+            kw["divider1"] = True
+            assert(kw.get("divider") is None)
+            kw["divider"] = np.double(args.pop(0))
         elif opt == '-divider2':
-            kw["divider2"] = np.double(args.pop(0))
+            kw["divider2"] = True
+            assert(kw.get("divider") is None)
+            kw["divider"] = np.double(args.pop(0))
         elif opt == '-freq':
             kw["frequencies"] = [ np.double(x) for x in args.pop(0).split(',') ]
         elif opt == '-loss':
@@ -356,7 +360,7 @@ def solve(ei, ii, data):
             power = np.abs(ii**2) * zi.real
             linez = [ feede**2 / w for w in power ]
     else:
-        optimal = np.arctan([ np.sqrt(np.max(x) / np.min(x) - 1) for x in zip(linez, [data["feed"]]*n) ])
+        extra = np.arctan([ np.sqrt(np.max(x) / np.min(x) - 1) for x in zip(linez, [data["feed"]] * n) ])
         linez = [ np.sign(w) * data["feed"] for w in power ]
 
     # tune lines
@@ -414,12 +418,10 @@ def solve(ei, ii, data):
 
                 ref_theta = np.angle(line[ref][0])
                 zfeed = zo[i].real
-
                 if data.get("divider2") is not None:
-                    ref_theta -= np.deg2rad(data.get("divider2"))
                     zfeed = feede**2 / power[i] 
-                if data.get("divider1") is not None:
-                    ref_theta -= np.deg2rad(data.get("divider1"))
+                if data.get("divider") is not None:
+                    ref_theta -= np.deg2rad(data.get("divider"))
 
                 theta = np.rad2deg(np.angle(line[i][0]) - ref_theta)
                 theta = np.mod(theta + 180, 360) - 180
