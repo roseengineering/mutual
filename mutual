@@ -10,7 +10,8 @@ defaults = {
     "segments": 21,
     "vf": .66,
     "power": 100,
-    "feed": 50
+    "feed": 50,
+    "frequencies": [ 3.5 ]
 }
 
 
@@ -204,6 +205,8 @@ def main(*args):
             kw["autoload"] = True
         elif opt == '-k2bt':
             kw["k2bt"] = True
+        elif opt == '-z':
+            kw["z"] = [ np.complex(x) for x in args.pop(0).split(',') ]
         elif opt == '-divider1':
             kw["divider1"] = np.double(args.pop(0))
         elif opt == '-divider2':
@@ -242,13 +245,17 @@ def main(*args):
     for frequency in kw["frequencies"]:
         kw["frequency"] = frequency
 
-        if kw.get('autoload'):
-            autoload(kw)
-        zij = mutual(kw)
+        if kw.get('z'):
+            zij = kw["z"] * np.identity(len(kw["z"]))
+        else:
+            if kw.get('autoload'):
+                autoload(kw)
+            zij = mutual(kw)
 
-        # calculate error norm
-        if kw.get('debug'):
-            error_norm(zij, kw)
+            # calculate error norm
+
+            if kw.get('debug'):
+                error_norm(zij, kw)
 
         # display results
         if kw.get("current"):
@@ -367,6 +374,7 @@ def solve(ei, ii, data):
 
             line = np.array([ ei, ii ]).T
             pin = [ watts(v) for v in line ]
+            # phase = np.angle(line[:,0])
             for i, m, reverse in zip(range(n), net, d > 1):
                 if reverse:
                     line[i] = multiply([[1, 1j*m[1]], [0, 1]], line[i])        # series
@@ -375,6 +383,14 @@ def solve(ei, ii, data):
                     line[i] = multiply([[1, 0], [1 / (1j*m[0]), 1]], line[i])  # shunt
                     line[i] = multiply([[1, 1j*m[1]], [0, 1]], line[i])        # series
             zo = line[:,0] / line[:,1]
+
+            # dphase = np.angle(line[:,0]) - phase
+            # print(np.rad2deg(dphase), np.tan(dphase))
+            # for k in range(len(zi)):
+            #      ratio = zi[k].real / zo[k].real
+            #      ratio = 1 / ratio if ratio < 1 else ratio
+            #      print(np.sqrt(ratio - 1), np.rad2deg(np.arctan(np.sqrt(ratio - 1))))
+
 
             # transmission line lengths
 
@@ -411,7 +427,7 @@ def solve(ei, ii, data):
 
                 theta = np.rad2deg(np.angle(line[i][0]) - ref_theta)
                 theta = np.mod(theta + 180, 360) - 180
-                print(' {:8.3f}'.format(theta), end="")
+                print(' {:8.3f}{:1s}'.format(theta, '!' if np.abs(theta) > 100 else ''), end="")
 
                 # phase shift
 
