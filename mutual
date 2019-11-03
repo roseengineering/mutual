@@ -366,8 +366,7 @@ def solve(ei, ii, data):
 
     print("! MHZ LINE   POWER               ZA        LMATCH                  ZIN        ELINE       ", end="")
     print("             PI                          TEE                      EOUT              ZOUT    POWER   PHASOR", end="")
-    if data.get("divider1") is not None or data.get("divider2") is not None: 
-        print("     OPTIMAL")
+    # if data.get("divider1") is not None or data.get("divider2") is not None: print("     OPTIMAL")
     print()
 
     for d in combo:
@@ -454,9 +453,7 @@ def solve(ei, ii, data):
                 # phasor
 
                 print(' {:8.3f}{:1s}'.format(theta, '*' if np.abs(theta) > 100 else ''), end="")
-                if data.get("divider1") is not None or data.get("divider2") is not None:
-                    print(' / {:8.3f}'.format(np.rad2deg(optimal[i])), end="")
-                
+                # if data.get("divider1") is not None or data.get("divider2") is not None: print(' / {:8.3f}'.format(np.rad2deg(optimal[i])), end="")
                 print()
 
 
