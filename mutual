@@ -215,6 +215,10 @@ def main(*args):
             kw["divider2"] = True
             assert(kw.get("divider") is None)
             kw["divider"] = np.double(args.pop(0))
+        elif opt == '-divider3':
+            kw["divider3"] = True
+            assert(kw.get("divider") is None)
+            kw["divider"] = np.double(args.pop(0))
         elif opt == '-freq':
             kw["frequencies"] = [ np.double(x) for x in args.pop(0).split(',') ]
         elif opt == '-loss':
@@ -344,14 +348,16 @@ def solve(ei, ii, data):
     power = np.abs(ii**2) * zi.real
     feede = np.sqrt(data["power"] * data["feed"])
 
+    # adjust power
+
     ratio = np.sqrt(data["power"] / np.sum(power))
     ei *= ratio
     ii *= ratio
     power = np.abs(ii**2) * zi.real
-    linez = [ feede**2 / w for w in power ]
 
     # impedances to tune lines to
 
+    linez = [ feede**2 / w for w in power ]
     if data.get("k2bt"):
         if data.get("tie"):
             isum = np.sum([ ii[i-1] for i in data["tie"] ])
@@ -360,8 +366,9 @@ def solve(ei, ii, data):
             power = np.abs(ii**2) * zi.real
             linez = [ feede**2 / w for w in power ]
     else:
-        extra = np.arctan([ np.sqrt(np.max(x) / np.min(x) - 1) for x in zip(linez, [data["feed"]] * n) ])
+        finalz = linez
         linez = [ np.sign(w) * data["feed"] for w in power ]
+        acu = [ [ lmatch(linez[i], finalz[i]), lmatch(finalz[i], linez[i]) ] for i in range(n) ] 
 
     # tune lines
 
@@ -400,7 +407,8 @@ def solve(ei, ii, data):
 
             ################
 
-            for i, m, reverse in zip(range(n), net, d > 1):
+            for num in range(2**n if data.get('divider3') else 1):
+              for i, m, reverse in zip(range(n), net, d > 1):
 
                 print('{:<7g} {:2d}'.format(frequency, i + 1), end="")
                 print(' {:7.3f}'.format(pin[i]), end="")
@@ -422,6 +430,26 @@ def solve(ei, ii, data):
                     zfeed = feede**2 / power[i] 
                 if data.get("divider") is not None:
                     ref_theta -= np.deg2rad(data.get("divider"))
+                if data.get("divider3") is not None:
+                    index = 1 if num & 2**i else 0
+                    v = [linez[i], 1]
+                    if np.isnan(acu[i][1][index][0]):
+                        xp = acu[i][0][index][0]
+                        xs = acu[i][0][index][1]
+                        # print(' [{:>8s} \\ {:>8s}]'.format(component(xp, frequency), component(xs, frequency)), end="")
+                        v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
+                        v = multiply([[1, 1j*xs], [0, 1]], v)        # series
+                        ref_theta -= np.angle(v[0])
+                    else:
+                        xp = acu[i][1][index][0]
+                        xs = acu[i][1][index][1]
+                        # print(' [{:>8s} / {:>8s}]'.format(component(xs, frequency), component(xp, frequency)), end="")
+                        v = multiply([[1, 1j*xs], [0, 1]], v)        # series
+                        v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
+                        ref_theta -= np.angle(v[0])
+                    # print(' [{:6.2f} {:14.2f}]'.format(np.rad2deg(np.angle(v[0])), v[0]/v[1]), end="")
+                    # ref_theta += extra[i] if num & 2**i else -extra[i]
+
 
                 theta = np.rad2deg(np.angle(line[i][0]) - ref_theta)
                 theta = np.mod(theta + 180, 360) - 180
@@ -433,14 +461,14 @@ def solve(ei, ii, data):
                 print(' {:>8s} {:>8s} {:>8s}'.format(component(x1, frequency), component(x2, frequency), component(x3, frequency)), end="")
                 if np.abs(theta) > 1e-3: v = pinet(v, x1, x2, x3)
                 assert(np.abs((v[0]/v[1]).imag) < 1e-3) 
-                # assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
+                assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
 
                 v = line[i]
                 x1, x2, x3 = teeshift(-theta, zo[i].real, zfeed)
                 print(' | {:>8s} {:>8s} {:>8s}'.format(component(x1, frequency), component(x2, frequency), component(x3, frequency)), end="")
                 if np.abs(theta) > 1e-3: v = teenet(v, x1, x2, x3)
                 assert(np.abs((v[0]/v[1]).imag) < 1e-3) 
-                # assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
+                assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
 
                 # results
 
@@ -448,8 +476,32 @@ def solve(ei, ii, data):
                 print(' {:8.3f}{:1s}'.format(theta, '*' if np.abs(theta) > 100 else ''), end="")
                 print(' {:9.4f} {:8.3f}'.format(np.abs(v[0]), np.rad2deg(np.angle(v[0]))), end="")
                 print(' {:14.2f}'.format(zout), end="")
-                print(' {:7.3f}'.format(watts(v)), end="")
                 assert(np.abs(zout.imag) < 1e-3) 
+
+                ###################
+
+                if data.get("divider3") is not None:
+                    index = 1 if num & 2**i else 0
+                    if np.isnan(acu[i][1][index][0]):
+                        xp = acu[i][0][index][0]
+                        xs = acu[i][0][index][1]
+                        print(' [{:>8s} \\ {:>8s}]'.format(component(xp, frequency), component(xs, frequency)), end="")
+                        v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
+                        v = multiply([[1, 1j*xs], [0, 1]], v)        # series
+                    else:
+                        xp = acu[i][1][index][0]
+                        xs = acu[i][1][index][1]
+                        print(' [{:>8s} / {:>8s}]'.format(component(xs, frequency), component(xp, frequency)), end="")
+                        v = multiply([[1, 1j*xs], [0, 1]], v)        # series
+                        v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
+  
+                    zout = v[0] / v[1]
+                    print(' {:9.4f} {:8.3f}'.format(np.abs(v[0]), np.rad2deg(np.angle(v[0]) - np.angle(line[ref][0]))), end="")
+                    print(' {:14.2f}'.format(zout), end="")
+
+                ###################
+
+                print(' {:7.3f}'.format(watts(v)), end="")
                 assert(np.abs(watts(v) - pin[i]) < 1e-3)
                 print()
 
