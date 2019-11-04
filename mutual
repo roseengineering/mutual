@@ -504,7 +504,6 @@ def solve(ei, ii, data):
   
                     zout = v[0] / v[1]
                     print(' {:14.2f}'.format(zout), end="")
-                    # print(' {:9.4f} {:8.3f}'.format(np.abs(v[0]), np.rad2deg(np.angle(v[0]) - np.angle(line[ref][0]))), end="")
                     print(' {:9.4f} {:8.3f}'.format(np.abs(v[0]), np.rad2deg(np.angle(v[0]))), end="")
 
                 ###################
