@@ -53,6 +53,7 @@ The program takes the following command line options:
 -k2bt      : solve phase budget using K2BT method
 -divider1  : solve phase budget using ohms law method, shift reference by given phase
 -divider2  : solve phase budget using tee network method, shift reference by given phase
+-divider3  : solve phase budget using l-match networks, shift reference by given phase
 ```
 
 Note the -diam, -height, and -el options can take the following suffix modifiers:
@@ -146,6 +147,11 @@ Solve the matching network for a 2-element, quarter-wave spacing array using the
 
 { run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -divider2 90") }
 { run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -divider2 -90") }
+
+Solve the matching network for a 2-element, quarter-wave spacing array using L-match power dividers.
+
+{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -divider3 0") }
+
 """)
 
 
