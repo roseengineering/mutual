@@ -453,7 +453,7 @@ def solve(ei, ii, data):
                 if data.get("divider") is not None:
                     ref_theta -= np.deg2rad(data.get("divider"))
                 if data.get("divider3") is not None:
-                    ref_theta -= adjust[i]
+                    ref_theta -= adjust[i] - adjust[ref]
 
                 theta = np.rad2deg(np.angle(line[i][0]) - ref_theta)
                 theta = np.mod(theta + 180, 360) - 180
