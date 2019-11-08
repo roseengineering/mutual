@@ -145,7 +145,7 @@ Solve the matching network for a 2-element, quarter-wave spacing array using the
 
 Solve the matching network for a 2-element, quarter-wave spacing array using the tee power divider method.
 
-{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -divider2 90") }
+{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -divider2 0") }
 { run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -divider2 -90") }
 
 Solve the matching network for a 2-element, quarter-wave spacing array using L-match power dividers.

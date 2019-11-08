@@ -378,7 +378,7 @@ def solve(ei, ii, data):
     print("! MHZ LINE   POWER               ZA        LMATCH                  ZIN        ELINE                    ", end="")
     print("PI                          TEE                      ZOUT   PHASOR          EOUT      ", end="")
     if data.get("divider3") is not None:
-        print("        LMATCH                ZFEED        EFEED      ", end="")
+        print("        LMATCH          SHIFT          ZFEED        EFEED      ", end="")
     print("   POWER", end="")
     print()
 
@@ -432,9 +432,13 @@ def solve(ei, ii, data):
 
               for i, m, reverse in zip(range(n), net, d > 1):
 
+                # summary (frequency, power, zantenna)
+
                 print('{:<7g} {:2d}'.format(frequency, i + 1), end="")
                 print(' {:7.3f}'.format(pin[i]), end="")
                 print(' {:16.5g}'.format(zi[i]), end="")
+
+                # ACU using l-match
 
                 if reverse:
                     print(' {:>8s} / {:>8s}'.format(component(m[1], frequency), component(m[0], frequency)), end="")
@@ -444,6 +448,8 @@ def solve(ei, ii, data):
                 print(' {:14.2f}'.format(zo[i]), end="")
                 assert(np.abs(zo[i].imag) < 1e-3) 
 
+                # voltage out of ACU
+ 
                 print(' {:9.4f} {:8.3f}'.format(np.abs(line[i][0]), np.rad2deg(np.angle(line[i][0]))), end="")
 
                 ref_theta = np.angle(line[ref][0])
@@ -493,12 +499,14 @@ def solve(ei, ii, data):
                         xp = acu[i][0][index][0]
                         xs = acu[i][0][index][1]
                         print(' {:>8s} \\ {:>8s}'.format(component(xp, frequency), component(xs, frequency)), end="")
+                        print(' {:8.3f}'.format(np.rad2deg(-adjust[i])), end="")
                         v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
                         v = multiply([[1, 1j*xs], [0, 1]], v)        # series
                     else:
                         xp = acu[i][1][index][0]
                         xs = acu[i][1][index][1]
                         print(' {:>8s} / {:>8s}'.format(component(xs, frequency), component(xp, frequency)), end="")
+                        print(' {:8.3f}'.format(np.rad2deg(-adjust[i])), end="")
                         v = multiply([[1, 1j*xs], [0, 1]], v)        # series
                         v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
   
