@@ -358,7 +358,7 @@ def solve(ei, ii, data):
     power = np.abs(ii**2) * zi.real
     linez_common = [ feede_common**2 / w for w in power ]
 
-    # tie tline1
+    # tline1
 
     if data.get("tie"):
         isum = np.sum([ ii[i-1] for i in data["tie"] ])
@@ -367,15 +367,13 @@ def solve(ei, ii, data):
         power = np.abs(ii**2) * zi.real
         linez_common = [ feede_common**2 / w for w in power ]
 
-    # ACU
+    # power divider
 
     if data.get("k2bt") is not None:
         linez = linez_common
     else:
         linez = [ np.sign(w) * data["feed"] for w in power ]
-        acu = [ [ lmatch(linez[i], linez_common[i]), lmatch(linez_common[i], linez[i]) ] for i in range(n) ] 
-
-    # tune lines
+        teemethod = [ [ lmatch(linez[i], linez_common[i]), lmatch(linez_common[i], linez[i]) ] for i in range(n) ] 
 
     match = [ np.concatenate([ lmatch(zi[i], linez[i]), lmatch(linez[i], zi[i]) ]) for i in range(n) ]
     combo = np.array([ [ i // (4 ** (n - k - 1)) % 4 for k in range(n) ] for i in range(4 ** n) ])
@@ -423,15 +421,15 @@ def solve(ei, ii, data):
                     for i in range(n):
                         index = 1 if num & 2**i else 0
                         v = [linez[i], 1]
-                        if np.isnan(acu[i][1][index][0]):
-                            xp = acu[i][0][index][0]
-                            xs = acu[i][0][index][1]
+                        if np.isnan(teemethod[i][1][index][0]):
+                            xp = teemethod[i][0][index][0]
+                            xs = teemethod[i][0][index][1]
                             v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
                             v = multiply([[1, 1j*xs], [0, 1]], v)        # series
                             adjust[i] = np.angle(v[0])
                         else:
-                            xp = acu[i][1][index][0]
-                            xs = acu[i][1][index][1]
+                            xp = teemethod[i][1][index][0]
+                            xs = teemethod[i][1][index][1]
                             v = multiply([[1, 1j*xs], [0, 1]], v)        # series
                             v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
                             adjust[i] = np.angle(v[0])
@@ -498,22 +496,20 @@ def solve(ei, ii, data):
 
                     if data.get("divider3") is not None:
                         index = 1 if num & 2**i else 0
-                        if np.isnan(acu[i][1][index][0]):
-                            xp = acu[i][0][index][0]
-                            xs = acu[i][0][index][1]
-                            print(' {:>8s} \\ {:>8s}'.format(component(xp, frequency), component(xs, frequency)), end="")
-                            print(' {:8.3f}'.format(np.rad2deg(-adjust[i])), end="")
+                        if np.isnan(teemethod[i][1][index][0]):
+                            xp = teemethod[i][0][index][0]
+                            xs = teemethod[i][0][index][1]
                             v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
                             v = multiply([[1, 1j*xs], [0, 1]], v)        # series
                         else:
-                            xp = acu[i][1][index][0]
-                            xs = acu[i][1][index][1]
-                            print(' {:>8s} / {:>8s}'.format(component(xs, frequency), component(xp, frequency)), end="")
-                            print(' {:8.3f}'.format(np.rad2deg(-adjust[i])), end="")
+                            xp = teemethod[i][1][index][0]
+                            xs = teemethod[i][1][index][1]
                             v = multiply([[1, 1j*xs], [0, 1]], v)        # series
                             v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
 
                         zout = v[0] / v[1]
+                        print(' {:>8s} / {:>8s}'.format(component(xs, frequency), component(xp, frequency)), end="")
+                        print(' {:8.3f}'.format(np.rad2deg(-adjust[i])), end="")
                         print(' {:14.2f}'.format(zout), end="")
                         print(' {:9.4f} {:8.3f}'.format(np.abs(v[0]), np.rad2deg(np.angle(v[0]))), end="")
 
