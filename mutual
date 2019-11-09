@@ -376,7 +376,7 @@ def solve(ei, ii, data):
     combo = np.array([ [ i // (4 ** (n - k - 1)) % 4 for k in range(n) ] for i in range(4 ** n) ])
 
     print("! MHZ LINE   POWER               ZA        LMATCH                  ZIN        ELINE                    ", end="")
-    print("PI                          TEE                      ZOUT   PHASOR          EOUT      ", end="")
+    print("PI                          TEE              PHASOR            ZOUT         EOUT      ", end="")
     if data.get("divider3") is not None:
         print("        LMATCH          SHIFT          ZFEED        EFEED      ", end="")
     print("   POWER", end="")
@@ -483,13 +483,10 @@ def solve(ei, ii, data):
                 # results
 
                 zout = v[0] / v[1]
-                print(' {:14.2f}'.format(zout), end="")
-                assert(np.abs(zout.imag) < 1e-3) 
-
-                # phasor
-
                 print(' {:8.3f}{:1s}'.format(theta, '*' if np.abs(theta) > 100 else ''), end="")
+                print(' {:14.2f}'.format(zout), end="")
                 print(' {:9.4f} {:8.3f}'.format(np.abs(v[0]), np.rad2deg(np.angle(v[0]))), end="")
+                assert(np.abs(zout.imag) < 1e-3) 
 
                 ###################
 
