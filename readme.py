@@ -48,7 +48,8 @@ The program takes the following command line options:
 -tie       : list of lines to tie together
 -debug     : show current error norm when simulating the array and other information
 -power     : transmitter power output, default 100 watts
--feed      : transmitter coax feedline impedance, default 50 ohms
+-output    : transmitter coax feedline impedance, default 50 ohms
+-feed      : ATU to phasor feedline impedance, default 50 ohms
 -z         : set driving impedance of the array instead of simulating
 -k2bt      : solve phase budget using K2BT method
 -divider1  : solve phase budget using ohms law method, shift reference by given phase
