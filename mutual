@@ -159,29 +159,28 @@ def print_drive(zij, data):
     ii = np.array(data["current"])
     ei = multiply(zij, ii)
 
-    if data.get("divider") is not None:
-        return solve(ei, ii, data)
+    # tlines from antenna to ATU
 
-    # tlines
-
-    if data.get("tline"):
-        for i, x in enumerate(data["tline"]):
+    if data.get("tline1"):
+        for i, x in enumerate(data["tline1"]):
             x = to_complex(x, f=frequency, vf=data["vf"])
             ei[i], ii[i] = multiply(tline(np.rad2deg(np.angle(x)), zo=np.abs(x)), [ei[i], ii[i]])
 
-    if data.get("k2bt"):
+    if data.get("divider") is not None:
         return solve(ei, ii, data)
-
-    zi = ei / ii
-    ztot = parallel(zi)
-    print('{:<8g}'.format(frequency), end="")
-    print(','.join([ ' {:8.4f} {:+8.4f}j'.format(x.real, x.imag) for x in zi ]))
-    print('! E in MA notation =', end="")
-    print(','.join([ ' {:8.4f} {:8.4f}'.format(np.abs(x), np.rad2deg(np.angle(x))) for x in ei ]))
-    print('! I in MA notation =', end="")
-    print(','.join([ ' {:8.4f} {:8.4f}'.format(np.abs(x), np.rad2deg(np.angle(x))) for x in ii ]))
-    print('! Z in parallel    =', end="")
-    print(' {:8.4f} {:+8.4f}j'.format(ztot.real, ztot.imag))
+    elif data.get("k2bt") is not None:
+        return solve(ei, ii, data)
+    else:
+        zi = ei / ii
+        ztot = parallel(zi)
+        print('{:<8g}'.format(frequency), end="")
+        print(','.join([ ' {:8.4f} {:+8.4f}j'.format(x.real, x.imag) for x in zi ]))
+        print('! E in MA notation =', end="")
+        print(','.join([ ' {:8.4f} {:8.4f}'.format(np.abs(x), np.rad2deg(np.angle(x))) for x in ei ]))
+        print('! I in MA notation =', end="")
+        print(','.join([ ' {:8.4f} {:8.4f}'.format(np.abs(x), np.rad2deg(np.angle(x))) for x in ii ]))
+        print('! Z in parallel    =', end="")
+        print(' {:8.4f} {:+8.4f}j'.format(ztot.real, ztot.imag))
 
 
 def print_mutual(zij, data):
@@ -237,8 +236,10 @@ def main(*args):
             kw["current"] = [ to_complex(x) for x in args.pop(0).split(',') ]
         elif opt == '-tie':
             kw["tie"] = [ np.int(x) for x in args.pop(0).split(',') ]
-        elif opt == '-tline':
-            kw["tline"] = args.pop(0).split(',')
+        elif opt == '-tline1':
+            kw["tline1"] = args.pop(0).split(',')
+        elif opt == '-tline2':
+            kw["tline2"] = args.pop(0).split(',')
         elif opt == '-vf':
             kw["vf"] = np.double(args.pop(0))
         elif opt == '-power':
@@ -389,7 +390,7 @@ def solve(ei, ii, data):
         print('!')
         for ref in range(n):
 
-            # tune
+            # ATU
 
             line = np.array([ ei, ii ]).T
             pin = [ watts(v) for v in line ]
@@ -402,10 +403,10 @@ def solve(ei, ii, data):
                     line[i] = multiply([[1, 1j*m[1]], [0, 1]], line[i])        # series
             zo = line[:,0] / line[:,1]
 
-            # add transmission line lengths
+            # transmission lines from ATU to phasors
 
-            if not data.get("k2bt") and data.get("tline"):
-                x = to_complex(data["tline"][i], f=frequency, vf=data["vf"])
+            if data.get("tline2") is not None:
+                x = to_complex(data["tline2"][i], f=frequency, vf=data["vf"])
                 line[i] = multiply(tline(np.rad2deg(np.angle(x)), zo=np.abs(x)), line[i])
 
             ################
