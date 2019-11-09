@@ -249,8 +249,6 @@ def main(*args):
             kw["feed"] = np.double(args.pop(0))
         elif opt == '-output':
             kw["output"] = np.double(args.pop(0))
-        elif opt == '-direct':
-            kw["direct"] = True
         else:
             raise ValueError("unknown option:", opt)
 
@@ -358,9 +356,6 @@ def solve(ei, ii, data):
     ei *= ratio
     ii *= ratio
     power = np.abs(ii**2) * zi.real
-    if data.get("direct"):
-        ref = np.argmax(power)
-        feede_common = np.sqrt(power[ref] * data["output"])
     linez_common = [ feede_common**2 / w for w in power ]
 
     # antenna lines
