@@ -169,7 +169,7 @@ def print_drive(zij, data):
 
     if data.get("divider") is not None:
         return solve(ei, ii, data)
-    elif data.get("k2bt") is not None:
+    elif data.get("k2bt"):
         return solve(ei, ii, data)
     else:
         zi = ei / ii
@@ -249,6 +249,8 @@ def main(*args):
             kw["feed"] = np.double(args.pop(0))
         elif opt == '-output':
             kw["output"] = np.double(args.pop(0))
+        elif opt == '-direct':
+            kw["direct"] = True
         else:
             raise ValueError("unknown option:", opt)
 
@@ -356,6 +358,9 @@ def solve(ei, ii, data):
     ei *= ratio
     ii *= ratio
     power = np.abs(ii**2) * zi.real
+    if data.get("direct"):
+        ref = np.argmax(power)
+        feede_common = np.sqrt(power[ref] * data["output"])
     linez_common = [ feede_common**2 / w for w in power ]
 
     # antenna lines
@@ -369,7 +374,7 @@ def solve(ei, ii, data):
 
     # divider method
 
-    if data.get("k2bt") is not None:
+    if data.get("k2bt"):
         linez = linez_common
     else:
         linez = [ np.sign(w) * data["feed"] for w in power ]
