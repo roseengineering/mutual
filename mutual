@@ -249,6 +249,8 @@ def main(*args):
             kw["feed"] = np.double(args.pop(0))
         elif opt == '-output':
             kw["output"] = np.double(args.pop(0))
+        elif opt == '-direct':
+            kw["direct"] = True
         else:
             raise ValueError("unknown option:", opt)
 
@@ -356,7 +358,7 @@ def solve(ei, ii, data):
     ei *= ratio
     ii *= ratio
     power = np.abs(ii**2) * zi.real
-    linez_common = [ feede_common**2 / w for w in power ]
+    linez_common = np.array([ feede_common**2 / w for w in power ])
 
     # antenna lines
 
@@ -368,6 +370,10 @@ def solve(ei, ii, data):
         linez_common = [ feede_common**2 / w for w in power ]
 
     # divider method
+
+    if data.get("direct"):
+        linez_common *= (1 + 1e-15) * power[np.argmax(power)] / data["power"]
+        print('! Z in parallel {:16.5g}'.format(parallel(linez_common)))
 
     if data.get("k2bt"):
         linez = linez_common
