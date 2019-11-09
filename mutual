@@ -358,7 +358,7 @@ def solve(ei, ii, data):
     power = np.abs(ii**2) * zi.real
     linez_common = [ feede_common**2 / w for w in power ]
 
-    # tline1
+    # antenna lines
 
     if data.get("tie"):
         isum = np.sum([ ii[i-1] for i in data["tie"] ])
@@ -367,16 +367,20 @@ def solve(ei, ii, data):
         power = np.abs(ii**2) * zi.real
         linez_common = [ feede_common**2 / w for w in power ]
 
-    # power divider
+    # divider method
 
     if data.get("k2bt") is not None:
         linez = linez_common
     else:
         linez = [ np.sign(w) * data["feed"] for w in power ]
-        teemethod = [ [ lmatch(linez[i], linez_common[i]), lmatch(linez_common[i], linez[i]) ] for i in range(n) ] 
+        method = [ [ lmatch(linez[i], linez_common[i]), lmatch(linez_common[i], linez[i]) ] for i in range(n) ] 
 
-    match = [ np.concatenate([ lmatch(zi[i], linez[i]), lmatch(linez[i], zi[i]) ]) for i in range(n) ]
+    # ACU
+
+    acu = [ np.concatenate([ lmatch(zi[i], linez[i]), lmatch(linez[i], zi[i]) ]) for i in range(n) ]
     combo = np.array([ [ i // (4 ** (n - k - 1)) % 4 for k in range(n) ] for i in range(4 ** n) ])
+
+    # calculate solutions
 
     print("! MHZ LINE   POWER               ZA        LMATCH                  ZIN        ELINE                    ", end="")
     print("PI                          TEE              PHASOR            ZOUT         EOUT      ", end="")
@@ -386,7 +390,7 @@ def solve(ei, ii, data):
     print()
 
     for d in combo:
-        net = np.array([ match[i][k] for i, k in enumerate(d) ])
+        net = np.array([ acu[i][k] for i, k in enumerate(d) ])
         if np.any(np.isnan(net.flatten())): continue
 
         print('!')
@@ -405,7 +409,7 @@ def solve(ei, ii, data):
                     line[i] = multiply([[1, 1j*m[1]], [0, 1]], line[i])        # series
             zo = line[:,0] / line[:,1]
 
-            # transmission lines from ATU to phasors
+            # ATU lines
 
             if data.get("tline2") is not None:
                 x = to_complex(data["tline2"][i], f=frequency, vf=data["vf"])
@@ -421,15 +425,15 @@ def solve(ei, ii, data):
                     for i in range(n):
                         index = 1 if num & 2**i else 0
                         v = [linez[i], 1]
-                        if np.isnan(teemethod[i][1][index][0]):
-                            xp = teemethod[i][0][index][0]
-                            xs = teemethod[i][0][index][1]
+                        if np.isnan(method[i][1][index][0]):
+                            xp = method[i][0][index][0]
+                            xs = method[i][0][index][1]
                             v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
                             v = multiply([[1, 1j*xs], [0, 1]], v)        # series
                             adjust[i] = np.angle(v[0])
                         else:
-                            xp = teemethod[i][1][index][0]
-                            xs = teemethod[i][1][index][1]
+                            xp = method[i][1][index][0]
+                            xs = method[i][1][index][1]
                             v = multiply([[1, 1j*xs], [0, 1]], v)        # series
                             v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
                             adjust[i] = np.angle(v[0])
@@ -496,14 +500,14 @@ def solve(ei, ii, data):
 
                     if data.get("divider3") is not None:
                         index = 1 if num & 2**i else 0
-                        if np.isnan(teemethod[i][1][index][0]):
-                            xp = teemethod[i][0][index][0]
-                            xs = teemethod[i][0][index][1]
+                        if np.isnan(method[i][1][index][0]):
+                            xp = method[i][0][index][0]
+                            xs = method[i][0][index][1]
                             v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
                             v = multiply([[1, 1j*xs], [0, 1]], v)        # series
                         else:
-                            xp = teemethod[i][1][index][0]
-                            xs = teemethod[i][1][index][1]
+                            xp = method[i][1][index][0]
+                            xs = method[i][1][index][1]
                             v = multiply([[1, 1j*xs], [0, 1]], v)        # series
                             v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
 
