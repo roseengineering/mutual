@@ -297,6 +297,8 @@ def bisect(f, a, b):
 
 
 def shuntmatch(P, R, V, L, F, K):
+    #  V o---L1---+----(-M)--+ P
+    #            L2          R
     sign = 1 
     W = 2 * np.pi * F
     def func(M):
@@ -308,10 +310,10 @@ def shuntmatch(P, R, V, L, F, K):
     mmax = lambda: L * K / (2 + 2 * K)
     sign = 1 if func(mmax()) < P else -1
     m = bisect(func2, 0, mmax())
-    if np.abs(func2(m)) > .1: return np.nan
+    if np.abs(func2(m)) > .1: m = np.nan
     L2 = coil2(m)
     L1 = L - L2
-    return -m, L2, L1
+    return np.array([-m, L2, L1]), shift(m)
 
 
 def lmatch(ZS, ZL):
@@ -439,9 +441,11 @@ def solve(ei, ii, data):
 
     print("! MHZ LINE   POWER               ZA        LMATCH                  ZIN        ELINE                    ", end="")
     print("PI                          TEE              PHASOR            ZOUT         EOUT      ", end="")
-    if data.get("divider3") is not None:
+    if data.get("divider3"):
         print("        LMATCH          SHIFT          ZFEED        EFEED      ", end="")
-    print("   POWER", end="")
+    if data.get("divider1"):
+        print("  SHUNTPH", end="")
+    print("  TOTALPH   POWER", end="")
     print()
 
     for d in combo:
@@ -471,18 +475,18 @@ def solve(ei, ii, data):
 
                 adjust = [0] * n
 
-                if data.get("divider3") is not None:
+                if data.get("divider3"):
                     for i in range(n):
                         index = 1 if num & 2**i else 0
-                        v = [linez[i], 1]
                         reverse = 1 if np.isnan(method[i][0][index][0]) else 0
+                        v = [linez[i], 1]
                         v = lmatchnet(v, method[i][reverse][index], reverse)
                         adjust[i] = np.angle(v[0])
 
-                if data.get("divider1") is not None:
+                if data.get("divider1"):
                     for i in range(n):
-                        pass # shuntmatch(P=watts(line[i]), R=linez[i], V=feede_common, L=data["l"], F=frequency, K=data["k"])
-                   
+                        pass # x, adjust[i] = shuntmatch(P=watts(line[i]), R=linez[i], V=feede_common, L=data["l"], F=frequency*1e6, K=data["k"])
+                    # print([ np.rad2deg(x) for x in adjust ])
 
                 for i, m, reverse in zip(range(n), net, d > 1):
 
@@ -506,13 +510,14 @@ def solve(ei, ii, data):
 
                     print(' {:9.4f} {:8.3f}'.format(np.abs(line[i][0]), np.rad2deg(np.angle(line[i][0]))), end="")
 
-                    ref_theta = np.angle(line[ref][0])
                     zfeed = zo[i].real
-                    if data.get("divider2") is not None:
-                        zfeed = feede_common**2 / power[i] 
+                    ref_theta = np.angle(line[ref][0])
+
                     if data.get("divider") is not None:
                         ref_theta -= np.deg2rad(data.get("divider"))
-                    if data.get("divider3") is not None:
+                    if data.get("divider2"):
+                        zfeed = feede_common**2 / power[i] 
+                    if data.get("divider3") or data.get("divider1"):
                         ref_theta -= adjust[i] - adjust[ref]
 
                     theta = np.rad2deg(np.angle(line[i][0]) - ref_theta)
@@ -546,25 +551,35 @@ def solve(ei, ii, data):
 
                     if data.get("divider3") is not None:
                         index = 1 if num & 2**i else 0
-                        if np.isnan(method[i][1][index][0]):
-                            xp = method[i][0][index][0]
-                            xs = method[i][0][index][1]
-                            v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
-                            v = multiply([[1, 1j*xs], [0, 1]], v)        # series
+                        reverse = 1 if np.isnan(method[i][0][index][0]) else 0
+                        x = method[i][reverse][index]
+                        v = lmatchnet(v, x, reverse)
+                        if reverse:
+                            print(' {:>8s} / {:>8s}'.format(component(x[1], frequency), component(x[0], frequency)), end="")
                         else:
-                            xp = method[i][1][index][0]
-                            xs = method[i][1][index][1]
-                            v = multiply([[1, 1j*xs], [0, 1]], v)        # series
-                            v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
+                            print(' {:>8s} \\ {:>8s}'.format(component(x[0], frequency), component(x[1], frequency)), end="")
 
                         zout = v[0] / v[1]
-                        print(' {:>8s} / {:>8s}'.format(component(xs, frequency), component(xp, frequency)), end="")
                         print(' {:8.3f}'.format(np.rad2deg(-adjust[i])), end="")
                         print(' {:14.2f}'.format(zout), end="")
                         print(' {:9.4f} {:8.3f}'.format(np.abs(v[0]), np.rad2deg(np.angle(v[0]))), end="")
 
+                    if data.get("divider1") is not None:
+                        pass
+                        # print(' {:8.3f}'.format(np.rad2deg(-adjust[i])), end="")
+                        # print(' -> {:8.3f}'.format(np.rad2deg(-adjust[i] + np.angle(line[i][0]))), end="")
+                         
+                        # rot = np.exp(1j * -adjust[i])
+                        # print(' {:9.4f} {:8.3f}'.format(np.abs(rot), np.rad2deg(np.angle(rot))), end="")
+                        # z = v[0] / v[1]
+                        # print(' {:9.4f} {:8.3f} ->'.format(np.abs(v[0]), np.rad2deg(np.angle(v[0]))), end="")
+                        # v[0] *= rot
+                        # v[1] = v[0] / z 
+                        # print(' {:9.4f} {:8.3f}'.format(np.abs(v[0]), np.rad2deg(np.angle(v[0]))), end="")
+
                     ###################
 
+                    print(' {:8.3f}'.format(np.rad2deg(np.angle(line[i][0]) - np.angle(v[0]))), end="")
                     print(' {:7.3f}'.format(watts(v)), end="")
                     assert(np.abs(watts(v) - pin[i]) < 1e-3)
                     print()
