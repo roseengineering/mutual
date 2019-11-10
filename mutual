@@ -410,7 +410,8 @@ def solve(ei, ii, data):
         linez_common = np.array(linez_common) 
         linez_common *= (1 + 1e-15) * power[np.argmax(power)] / data["power"]
         feede_common = np.sqrt(data["power"] * parallel(linez_common))
-    print('! Z in parallel {:16.5g}'.format(parallel(linez_common)))
+    if not data.get("divider1"):
+        print('! Z in parallel {:16.5g}'.format(parallel(linez_common)))
 
     # handle tie
 
@@ -444,7 +445,7 @@ def solve(ei, ii, data):
     if data.get("divider3"):
         print("        LMATCH          SHIFT          ZFEED        EFEED      ", end="")
     if data.get("divider1"):
-        print("  SHUNTPH        EFEED      ", end="")
+        print("  SHUNTPH /     N          ZFEED         EFEED      ", end="")
     print("  TOTALPH   POWER", end="")
     print()
 
@@ -562,23 +563,22 @@ def solve(ei, ii, data):
                         print(' {:8.3f}'.format(np.rad2deg(-adjust[i])), end="")
                         print(' {:14.2f}'.format(zout), end="")
                         print(' {:9.4f} {:8.3f}'.format(np.abs(v[0]), np.rad2deg(np.angle(v[0]))), end="")
+                        assert(np.abs(zout.imag) < 1e-3) 
 
                     if data.get("divider1") is not None:
-
-                        # x = shuntmatch(P=watts(line[i]), R=linez[i], V=feede_common, L=data["l"], F=frequency*1e6, K=data["k"], flag=1)
-                        # print(' < {} {} {}>'.format(*x), end="")
-                        # h = teenet(v, *x)
-                        # print(' < {:9.4f} {:8.3f} >'.format(np.abs(h[0]), np.rad2deg(np.angle(h[0]))), end="")
-
-                        v *= np.exp(1j * adjust[i])
+                        x = shuntmatch(P=watts(line[i]), R=linez[i], V=feede_common, L=data["l"], F=frequency*1e6, K=data["k"], flag=1)
+                        v = teenet(v, *x)
+                        zout = v[0] / v[1]
                         print(' {:8.3f}'.format(np.rad2deg(-adjust[i])), end="")
+                        print(' / {:5.3f}'.format(np.sqrt(x[1] / (x[1] + x[2]))), end="")
+                        print(' {:14.2f} '.format(zout), end="")
                         print(' {:9.4f} {:8.3f}'.format(np.abs(v[0]), np.rad2deg(np.angle(v[0]))), end="")
 
                     ###################
 
                     print(' {:8.3f}'.format(np.rad2deg(np.angle(line[i][0]) - np.angle(v[0]))), end="")
                     print(' {:7.3f}'.format(watts(v)), end="")
-                    # assert(np.abs(watts(v) - pin[i]) < 1e-3)
+                    assert(np.abs(watts(v) - pin[i]) < 1e-3)
                     print()
 
 

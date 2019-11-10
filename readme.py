@@ -45,8 +45,8 @@ The program takes the following command line options:
 -tline1    : transmision lines from antenna to antenna tuning unit (ATU)
 -tline2    : transmision lines from antenna tuning unit (ATU) to phaser
 -vf        : velocity factor of the transmission line if angle given in feet or meters
--k         : coefficient of coupling for shunt method
--l         : inductance of shunt method power divider inductor
+-k         : coefficient of coupling for shunt method, by default .25
+-l         : inductance of shunt method power divider inductor, by default 25uH
 -tie       : list of lines to tie together
 -debug     : show current error norm when simulating the array and other information
 -power     : transmitter power output, default 100 watts
