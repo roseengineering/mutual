@@ -368,6 +368,7 @@ Solve the matching network for a 4-square, quarter-wave spacing array using the 
 ```
 $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 0,65ft -el 65ft,0 -el 65ft,65ft -current 1,-j,-j,-1 -k2bt -tline1 50/100,50/100,50/100,50/100 -tie 2,3
 ! MHZ Z RI R 1
+! Z in parallel               50
 ! MHZ LINE   POWER               ZA        LMATCH                  ZIN        ELINE                    PI                          TEE              PHASOR            ZOUT         EOUT         POWER
 !
 3.8      1  -0.936  -79.963+397.27j  10.53uH /   63.6pF -5342.59+0.00j   70.7107   85.395        -        -        - |        -        -        -    0.000  -5342.59+0.00j   70.7107   85.395  -0.936

@@ -8,7 +8,9 @@ defaults = {
     "losses": 0,
     "loading": 0,
     "segments": 21,
-    "vf": .66,
+    "vf": 0.66,
+    "k": 0.25,
+    "l": 25e-6,
     "power": 100,
     "feed": 50,
     "output": 50,
@@ -243,6 +245,10 @@ def main(*args):
             kw["tline2"] = args.pop(0).split(',')
         elif opt == '-vf':
             kw["vf"] = np.double(args.pop(0))
+        elif opt == '-k':
+            kw["k"] = np.double(args.pop(0))
+        elif opt == '-l':
+            kw["l"] = np.double(args.pop(0))
         elif opt == '-power':
             kw["power"] = np.double(args.pop(0))
         elif opt == '-feed':
@@ -280,6 +286,32 @@ def main(*args):
 
 
 ######################
+
+def bisect(f, a, b):
+    for n in range(100):
+        c = (a + b) / 2
+        if np.abs(f(c) - f(a)) < 1e-5: break
+        if np.sign(f(c)) == np.sign(f(a)): a = c
+        else: b= c
+    return c
+
+
+def shuntmatch(P, R, V, L, F, K):
+    sign = 1 
+    W = 2 * np.pi * F
+    def func(M):
+        return (R * V**2 * (L/2 + sign * np.sqrt((2 * M - L)**2 / 4 - M**2 / K**2))**2 /
+               (R**2 * L**2 + W**2 * M**4 * (1 - K**2) / K**4))
+    func2 = lambda M: P - func(M)
+    coil2 = lambda M: L/2 - np.sqrt((2 * M - L)**2 / 4 - M**2 / K**2)
+    shift = lambda M: -np.arctan(W * (1 - K**2) * M**2 / (R * L * K**2))
+    mmax = lambda: L * K / (2 + 2 * K)
+    sign = 1 if func(mmax()) < P else -1
+    m = bisect(func2, 0, mmax())
+    if np.abs(func2(m)) > .1: return np.nan
+    L2 = coil2(m)
+    L1 = L - L2
+    return -m, L2, L1
 
 
 def lmatch(ZS, ZL):
@@ -370,7 +402,15 @@ def solve(ei, ii, data):
     power = np.abs(ii**2) * zi.real
     linez_common = [ feede_common**2 / w for w in power ]
 
-    # antenna to ATU lines
+    # common point
+
+    if data.get("direct"):
+        linez_common = np.array(linez_common) 
+        linez_common *= (1 + 1e-15) * power[np.argmax(power)] / data["power"]
+        feede_common = np.sqrt(data["power"] * parallel(linez_common))
+    print('! Z in parallel {:16.5g}'.format(parallel(linez_common)))
+
+    # handle tie
 
     if data.get("tie"):
         isum = np.sum([ ii[i-1] for i in data["tie"] ])
@@ -378,13 +418,6 @@ def solve(ei, ii, data):
         zi = ei / ii
         power = np.abs(ii**2) * zi.real
         linez_common = [ feede_common**2 / w for w in power ]
-
-    # common point
-
-    if data.get("direct"):
-        linez_common = (np.array(linez_common) * (1 + 1e-15) * power[np.argmax(power)] / data["power"]).tolist()
-    if not data.get("tie"):
-        print('! Z in parallel {:16.5g}'.format(parallel(linez_common)))
 
     # power divider
 
@@ -445,6 +478,11 @@ def solve(ei, ii, data):
                         reverse = 1 if np.isnan(method[i][0][index][0]) else 0
                         v = lmatchnet(v, method[i][reverse][index], reverse)
                         adjust[i] = np.angle(v[0])
+
+                if data.get("divider1") is not None:
+                    for i in range(n):
+                        pass # shuntmatch(P=watts(line[i]), R=linez[i], V=feede_common, L=data["l"], F=frequency, K=data["k"])
+                   
 
                 for i, m, reverse in zip(range(n), net, d > 1):
 
