@@ -51,6 +51,7 @@ The program takes the following command line options:
 -output    : transmitter coax feedline impedance, default 50 ohms
 -feed      : ATU to phasor feedline impedance, default 50 ohms
 -z         : set driving impedance of the array instead of simulating
+-direct    : use a direct connection to the common point for the line delivering the most power
 -k2bt      : solve phase budget using K2BT method
 -divider1  : solve phase budget using ohms law method, shift reference by given phase
 -divider2  : solve phase budget using tee network method, shift reference by given phase

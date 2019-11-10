@@ -142,7 +142,7 @@ def to_distance(buf):
     return np.double(buf)
     
 
-def parallel(*zi):
+def parallel(zi):
     return 1 / np.sum([ 1 / x for x in zi ])
 
 
@@ -346,21 +346,31 @@ def teenet(v, x1, x2, x3):
     return v
 
 
+def lmatchnet(v, x, reverse=False):
+    if reverse:
+        v = multiply([[1, 1j*x[1]], [0, 1]], v)        # series
+        v = multiply([[1, 0], [1 / (1j*x[0]), 1]], v)  # shunt
+    else:
+        v = multiply([[1, 0], [1 / (1j*x[0]), 1]], v)  # shunt
+        v = multiply([[1, 1j*x[1]], [0, 1]], v)        # series
+    return v
+                    
+
 def solve(ei, ii, data):
     n = len(ei)
     frequency = data["frequency"]
     zi = ei / ii
     feede_common = np.sqrt(data["power"] * data["output"])
 
-    # feed power 
+    # transmitter power 
 
     ratio = np.sqrt(data["power"] / np.sum(np.abs(ii**2) * zi.real))
     ei *= ratio
     ii *= ratio
     power = np.abs(ii**2) * zi.real
-    linez_common = np.array([ feede_common**2 / w for w in power ])
+    linez_common = [ feede_common**2 / w for w in power ]
 
-    # antenna lines
+    # antenna to ATU lines
 
     if data.get("tie"):
         isum = np.sum([ ii[i-1] for i in data["tie"] ])
@@ -369,11 +379,14 @@ def solve(ei, ii, data):
         power = np.abs(ii**2) * zi.real
         linez_common = [ feede_common**2 / w for w in power ]
 
-    # divider method
+    # common point
 
     if data.get("direct"):
-        linez_common *= (1 + 1e-15) * power[np.argmax(power)] / data["power"]
+        linez_common = (np.array(linez_common) * (1 + 1e-15) * power[np.argmax(power)] / data["power"]).tolist()
+    if not data.get("tie"):
         print('! Z in parallel {:16.5g}'.format(parallel(linez_common)))
+
+    # power divider
 
     if data.get("k2bt"):
         linez = linez_common
@@ -384,6 +397,9 @@ def solve(ei, ii, data):
     # ACU
 
     acu = [ np.concatenate([ lmatch(zi[i], linez[i]), lmatch(linez[i], zi[i]) ]) for i in range(n) ]
+
+    # generate all four combinations for each feed line: neg/pos, regular/reverse
+
     combo = np.array([ [ i // (4 ** (n - k - 1)) % 4 for k in range(n) ] for i in range(4 ** n) ])
 
     # calculate solutions
@@ -407,15 +423,10 @@ def solve(ei, ii, data):
             line = np.array([ ei, ii ]).T
             pin = [ watts(v) for v in line ]
             for i, m, reverse in zip(range(n), net, d > 1):
-                if reverse:
-                    line[i] = multiply([[1, 1j*m[1]], [0, 1]], line[i])        # series
-                    line[i] = multiply([[1, 0], [1 / (1j*m[0]), 1]], line[i])  # shunt
-                else:
-                    line[i] = multiply([[1, 0], [1 / (1j*m[0]), 1]], line[i])  # shunt
-                    line[i] = multiply([[1, 1j*m[1]], [0, 1]], line[i])        # series
+                line[i] = lmatchnet(line[i], m, reverse)
             zo = line[:,0] / line[:,1]
 
-            # ATU lines
+            # ATU to phasor feed lines
 
             if data.get("tline2") is not None:
                 x = to_complex(data["tline2"][i], f=frequency, vf=data["vf"])
@@ -431,18 +442,9 @@ def solve(ei, ii, data):
                     for i in range(n):
                         index = 1 if num & 2**i else 0
                         v = [linez[i], 1]
-                        if np.isnan(method[i][1][index][0]):
-                            xp = method[i][0][index][0]
-                            xs = method[i][0][index][1]
-                            v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
-                            v = multiply([[1, 1j*xs], [0, 1]], v)        # series
-                            adjust[i] = np.angle(v[0])
-                        else:
-                            xp = method[i][1][index][0]
-                            xs = method[i][1][index][1]
-                            v = multiply([[1, 1j*xs], [0, 1]], v)        # series
-                            v = multiply([[1, 0], [1 / (1j*xp), 1]], v)  # shunt
-                            adjust[i] = np.angle(v[0])
+                        reverse = 1 if np.isnan(method[i][0][index][0]) else 0
+                        v = lmatchnet(v, method[i][reverse][index], reverse)
+                        adjust[i] = np.angle(v[0])
 
                 for i, m, reverse in zip(range(n), net, d > 1):
 

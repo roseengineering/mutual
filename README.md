@@ -37,6 +37,7 @@ The program takes the following command line options:
 -output    : transmitter coax feedline impedance, default 50 ohms
 -feed      : ATU to phasor feedline impedance, default 50 ohms
 -z         : set driving impedance of the array instead of simulating
+-direct    : use a direct connection to the common point for the line delivering the most power
 -k2bt      : solve phase budget using K2BT method
 -divider1  : solve phase budget using ohms law method, shift reference by given phase
 -divider2  : solve phase budget using tee network method, shift reference by given phase
@@ -276,6 +277,7 @@ Solve the matching network for a 3-element in-line, quarter-wave spacing array u
 ```
 $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -el 130ft,0 -current 1,1/-90,-1 -k2bt
 ! MHZ Z RI R 1
+! Z in parallel               50
 ! MHZ LINE   POWER               ZA        LMATCH                  ZIN        ELINE                    PI                          TEE              PHASOR            ZOUT         EOUT         POWER
 !
 3.8      1  23.299   28.685-2.7644j  596.1pF /   3.53uH   214.60+0.00j   70.7107  -68.555        -        -        - |        -        -        -    0.000    214.60+0.00j   70.7107  -68.555  23.299
@@ -648,6 +650,7 @@ Solve the matching network for a 2-element, quarter-wave spacing array using the
 ```
 $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -k2bt
 ! MHZ Z RI R 1
+! Z in parallel               50
 ! MHZ LINE   POWER               ZA        LMATCH                  ZIN        ELINE                    PI                          TEE              PHASOR            ZOUT         EOUT         POWER
 !
 3.8      1  28.178   20.156-17.471j  1.079nF /   2.66uH   177.44-0.00j   70.7107  -70.304        -        -        - |        -        -        -    0.000    177.44-0.00j   70.7107  -70.304  28.178
@@ -681,6 +684,7 @@ Solve the matching network for a 2-element, quarter-wave spacing array using the
 ```
 $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -divider1 0
 ! MHZ Z RI R 1
+! Z in parallel               50
 ! MHZ LINE   POWER               ZA        LMATCH                  ZIN        ELINE                    PI                          TEE              PHASOR            ZOUT         EOUT         POWER
 !
 3.8      1  28.178   20.156-17.471j  5.936nF /  1.721uH    50.00+0.00j   37.5353  -50.586        -        -        - |        -        -        -    0.000     50.00+0.00j   37.5353  -50.586  28.178
@@ -708,6 +712,7 @@ $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -d
 ```
 $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -divider1 90
 ! MHZ Z RI R 1
+! Z in parallel               50
 ! MHZ LINE   POWER               ZA        LMATCH                  ZIN        ELINE                    PI                          TEE              PHASOR            ZOUT         EOUT         POWER
 !
 3.8      1  28.178   20.156-17.471j  5.936nF /  1.721uH    50.00+0.00j   37.5353  -50.586  2.094uH  837.7pF  2.094uH |  837.7pF  2.094uH  837.7pF   90.000     50.00-0.00j   37.5353 -140.586  28.178
@@ -738,6 +743,7 @@ Solve the matching network for a 2-element, quarter-wave spacing array using the
 ```
 $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -divider2 0
 ! MHZ Z RI R 1
+! Z in parallel               50
 ! MHZ LINE   POWER               ZA        LMATCH                  ZIN        ELINE                    PI                          TEE              PHASOR            ZOUT         EOUT         POWER
 !
 3.8      1  28.178   20.156-17.471j  5.936nF /  1.721uH    50.00+0.00j   37.5353  -50.586        -        -        - |        -        -        -    0.000     50.00+0.00j   37.5353  -50.586  28.178
@@ -765,6 +771,7 @@ $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -d
 ```
 $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -divider2 -90
 ! MHZ Z RI R 1
+! Z in parallel               50
 ! MHZ LINE   POWER               ZA        LMATCH                  ZIN        ELINE                    PI                          TEE              PHASOR            ZOUT         EOUT         POWER
 !
 3.8      1  28.178   20.156-17.471j  5.936nF /  1.721uH    50.00+0.00j   37.5353  -50.586  444.7pF  3.945uH  444.7pF |  3.945uH  444.7pF  3.945uH  -90.000    177.44-0.00j   70.7107   39.414  28.178
@@ -795,6 +802,7 @@ Solve the matching network for a 2-element, quarter-wave spacing array using L-m
 ```
 $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -divider3 0
 ! MHZ Z RI R 1
+! Z in parallel               50
 ! MHZ LINE   POWER               ZA        LMATCH                  ZIN        ELINE                    PI                          TEE              PHASOR            ZOUT         EOUT              LMATCH          SHIFT          ZFEED        EFEED         POWER
 !
 3.8      1  28.178   20.156-17.471j  5.936nF /  1.721uH    50.00+0.00j   37.5353  -50.586        -        -        - |        -        -        -    0.000     50.00+0.00j   37.5353  -50.586  524.7pF /  4.655uH   57.938   177.44+0.00j   70.7107 -108.524  28.178
