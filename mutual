@@ -313,7 +313,7 @@ def shuntmatch(P, R, V, L, F, K):
     if np.abs(func2(m)) > .1: m = np.nan
     L2 = coil2(m)
     L1 = L - L2
-    return np.array([-m, L2, L1]), shift(m)
+    return shift(m)
 
 
 def lmatch(ZS, ZL):
@@ -444,7 +444,7 @@ def solve(ei, ii, data):
     if data.get("divider3"):
         print("        LMATCH          SHIFT          ZFEED        EFEED      ", end="")
     if data.get("divider1"):
-        print("  SHUNTPH", end="")
+        print("  SHUNTPH        EFEED      ", end="")
     print("  TOTALPH   POWER", end="")
     print()
 
@@ -465,7 +465,7 @@ def solve(ei, ii, data):
 
             # ATU to phasor feed lines
 
-            if data.get("tline2") is not None:
+            if data.get("tline2"):
                 x = to_complex(data["tline2"][i], f=frequency, vf=data["vf"])
                 line[i] = multiply(tline(np.rad2deg(np.angle(x)), zo=np.abs(x)), line[i])
 
@@ -485,8 +485,7 @@ def solve(ei, ii, data):
 
                 if data.get("divider1"):
                     for i in range(n):
-                        pass # x, adjust[i] = shuntmatch(P=watts(line[i]), R=linez[i], V=feede_common, L=data["l"], F=frequency*1e6, K=data["k"])
-                    # print([ np.rad2deg(x) for x in adjust ])
+                        adjust[i] = shuntmatch(P=watts(line[i]), R=linez[i], V=feede_common, L=data["l"], F=frequency*1e6, K=data["k"])
 
                 for i, m, reverse in zip(range(n), net, d > 1):
 
@@ -525,14 +524,14 @@ def solve(ei, ii, data):
 
                     # phase shift
 
-                    v = line[i]
+                    v = line[i].copy()
                     x1, x2, x3 = pishift(-theta, zo[i].real, zfeed)
                     print(' {:>8s} {:>8s} {:>8s}'.format(component(x1, frequency), component(x2, frequency), component(x3, frequency)), end="")
                     if np.abs(theta) > 1e-3: v = pinet(v, x1, x2, x3)
                     assert(np.abs((v[0]/v[1]).imag) < 1e-3) 
                     assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
 
-                    v = line[i]
+                    v = line[i].copy()
                     x1, x2, x3 = teeshift(-theta, zo[i].real, zfeed)
                     print(' | {:>8s} {:>8s} {:>8s}'.format(component(x1, frequency), component(x2, frequency), component(x3, frequency)), end="")
                     if np.abs(theta) > 1e-3: v = teenet(v, x1, x2, x3)
@@ -565,17 +564,9 @@ def solve(ei, ii, data):
                         print(' {:9.4f} {:8.3f}'.format(np.abs(v[0]), np.rad2deg(np.angle(v[0]))), end="")
 
                     if data.get("divider1") is not None:
-                        pass
-                        # print(' {:8.3f}'.format(np.rad2deg(-adjust[i])), end="")
-                        # print(' -> {:8.3f}'.format(np.rad2deg(-adjust[i] + np.angle(line[i][0]))), end="")
-                         
-                        # rot = np.exp(1j * -adjust[i])
-                        # print(' {:9.4f} {:8.3f}'.format(np.abs(rot), np.rad2deg(np.angle(rot))), end="")
-                        # z = v[0] / v[1]
-                        # print(' {:9.4f} {:8.3f} ->'.format(np.abs(v[0]), np.rad2deg(np.angle(v[0]))), end="")
-                        # v[0] *= rot
-                        # v[1] = v[0] / z 
-                        # print(' {:9.4f} {:8.3f}'.format(np.abs(v[0]), np.rad2deg(np.angle(v[0]))), end="")
+                        v *= np.exp(1j * adjust[i])
+                        print(' {:8.3f}'.format(np.rad2deg(-adjust[i])), end="")
+                        print(' {:9.4f} {:8.3f}'.format(np.abs(v[0]), np.rad2deg(np.angle(v[0]))), end="")
 
                     ###################
 
