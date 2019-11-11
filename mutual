@@ -305,7 +305,6 @@ def shuntmatch(P, R, V, L, F, K, flag=None):
     if np.abs(func2(m)) > .1: m = np.nan
     L2 = coil2(m)
     L1 = L - L2
-    # print('\n', 'E=',2*np.sqrt(P*R),'R=',R, 'L=',L, 'F=',F, 'K=',K, 'L2=', L2)
     return np.array([ -m, L2, L1 ]) * W if flag else shift(m) 
 
 
@@ -428,6 +427,7 @@ def solve(ei, ii, data):
 
     # ACU
 
+    # acu = [np.concatenate([[[ np.inf, 0 ]] * 2, [[ np.nan, np.nan ]]*2 ])] * n
     acu = [ np.concatenate([ lmatch(zi[i], linez[i]), lmatch(linez[i], zi[i]) ]) for i in range(n) ]
 
     # generate all four combinations for each feed line: neg/pos, regular/reverse
@@ -460,7 +460,8 @@ def solve(ei, ii, data):
             # ATU
 
             for i, m, reverse in zip(range(n), net, d > 1):
-                line[i] = lmatchnet(line[i], m, reverse)
+                if not np.isinf(m[0]): 
+                    line[i] = lmatchnet(line[i], m, reverse)
             zo = line[:,0] / line[:,1]
 
             # ATU to phasor feed lines
@@ -476,7 +477,7 @@ def solve(ei, ii, data):
                 adjust = [0] * n
                 
 
-                if data.get("direct"):
+                if data.get("direct") and data.get("divider2"):
                     if ref != np.argmax(power):
                         continue
 
@@ -534,16 +535,16 @@ def solve(ei, ii, data):
                     print(' {:>8s} {:>8s} {:>8s}'.format(component(x1, frequency), component(x2, frequency), component(x3, frequency)), end="")
                     if np.abs(theta) > 1e-3: 
                         v = pinet(v, x1, x2, x3)
-                    # assert(np.abs((v[0]/v[1]).imag) < 1e-3) 
-                    # assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
+                    assert(np.abs((v[0]/v[1]).imag) < 1e-3) 
+                    assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
 
                     v = line[i].copy()
                     x1, x2, x3 = teeshift(-theta, zo[i].real, zfeed)
                     print(' | {:>8s} {:>8s} {:>8s}'.format(component(x1, frequency), component(x2, frequency), component(x3, frequency)), end="")
                     if np.abs(theta) > 1e-3: 
                         v = teenet(v, x1, x2, x3)
-                    # assert(np.abs((v[0]/v[1]).imag) < 1e-3) 
-                    # assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
+                    assert(np.abs((v[0]/v[1]).imag) < 1e-3) 
+                    assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
 
                     # results
 
@@ -551,7 +552,7 @@ def solve(ei, ii, data):
                     print(' {:8.3f}{:1s}'.format(theta, '*' if np.abs(theta) > 100 else ''), end="")
                     print(' {:14.2f}'.format(zout), end="")
                     print(' {:9.4f} {:8.3f}'.format(np.abs(v[0]), np.rad2deg(np.angle(v[0]))), end="")
-                    # assert(np.abs(zout.imag) < 1e-3) 
+                    assert(np.abs(zout.imag) < 1e-3) 
 
                     ###################
 
@@ -572,7 +573,7 @@ def solve(ei, ii, data):
                         print(' {:8.3f}'.format(np.rad2deg(-adjust[i])), end="")
                         print(' {:14.2f}'.format(zout), end="")
                         print(' {:9.4f} {:8.3f}'.format(np.abs(v[0]), np.rad2deg(np.angle(v[0]))), end="")
-                        # assert(np.abs(zout.imag) < 1e-3) 
+                        assert(np.abs(zout.imag) < 1e-3) 
 
                     if data.get("divider1"):
                         if not data.get("direct") or direct_common != i:
@@ -590,7 +591,7 @@ def solve(ei, ii, data):
 
                     print(' {:8.3f}'.format(np.rad2deg(np.angle(line[i][0]) - np.angle(v[0]))), end="")
                     print(' {:7.3f}'.format(watts(v)), end="")
-                    # assert(np.abs(watts(v) - pin[i]) < 1e-3)
+                    assert(np.abs(watts(v) - pin[i]) < 1e-3)
                     print()
 
 
