@@ -55,9 +55,9 @@ The program takes the following command line options:
 -z         : set driving impedance of the array instead of simulating
 -direct    : use a direct connection to the common point for the line delivering the most power
 -k2bt      : solve phase budget using K2BT method
--divider1  : solve phase budget using shunt (ohms law) method, shift reference by given phase
--divider2  : solve phase budget using tee network method, shift reference by given phase
--divider3  : solve phase budget using l-match networks, shift reference by given phase
+-divider1  : solve phase budget using shunt (ohms law) method
+-divider2  : solve phase budget using tee network method
+-divider3  : solve phase budget using l-match networks
 ```
 
 Note the -diam, -height, and -el options can take the following suffix modifiers:
@@ -141,23 +141,25 @@ Solve the matching network for a 4-square, quarter-wave spacing array using the 
 Solve the matching network for a 2-element, quarter-wave spacing array using the K2BT method.
 
 { run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -k2bt") }
+{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -k2bt -direct") }
 
 
 
 
 Solve the matching network for a 2-element, quarter-wave spacing array using the shunt / ohms law power divider method and a 7uH shunt inductor.
 
-{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -l 7e-6 -current 1,-j -divider1 0") }
-{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -l 7e-6 -current 1,-j -divider1 90") }
+{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -l 7e-6 -current 1,-j -divider1") }
+{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -l 7e-6 -current 1,-j -divider1 -direct") }
 
 Solve the matching network for a 2-element, quarter-wave spacing array using the tee power divider method.
 
-{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -divider2 0") }
-{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -divider2 -90") }
+{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -divider2") }
+{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -divider2 -direct") }
 
 Solve the matching network for a 2-element, quarter-wave spacing array using L-match power dividers.
 
-{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -divider3 0") }
+{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -divider3") }
+{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -divider3 -direct") }
 
 """)
 
