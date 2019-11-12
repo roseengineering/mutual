@@ -40,7 +40,7 @@ The program takes the following command line options:
 -feed      : ATU to phasor feedline impedance, default 50 ohms
 -z         : set driving impedance of the array instead of simulating
 -direct    : use a direct connection to the common point for the line delivering the most power
--k2bt      : solve phase budget using K2BT method
+-gehrke1   : solve phase budget using K2BT method
 -divider1  : solve phase budget using shunt (ohms law) method
 -divider2  : solve phase budget using tee network method, must pass reference phase shift
 -divider3  : solve phase budget using l-match networks
@@ -277,7 +277,7 @@ Solve the matching network for a 3-element in-line, quarter-wave spacing array u
 
 
 ```
-$ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -el 130ft,0 -current 1,1/-90,-1 -k2bt
+$ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -el 130ft,0 -current 1,1/-90,-1 -gehrke1
 ! MHZ Z RI R 1
 ! Z in parallel               50
 ! MHZ LINE   POWER               ZA        LMATCH                  ZIN        ELINE                    PI                          TEE              PHASOR            ZOUT         EOUT        TOTALPH   POWER
@@ -368,7 +368,7 @@ Solve the matching network for a 4-square, quarter-wave spacing array using the 
 
 
 ```
-$ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 0,65ft -el 65ft,0 -el 65ft,65ft -current 1,-j,-j,-1 -k2bt -tline1 50/100,50/100,50/100,50/100 -tie 2,3
+$ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 0,65ft -el 65ft,0 -el 65ft,65ft -current 1,-j,-j,-1 -gehrke1 -tline1 50/100,50/100,50/100,50/100 -tie 2,3
 ! MHZ Z RI R 1
 ! Z in parallel               50
 ! MHZ LINE   POWER               ZA        LMATCH                  ZIN        ELINE                    PI                          TEE              PHASOR            ZOUT         EOUT        TOTALPH   POWER
@@ -651,7 +651,7 @@ Solve the matching network for a 2-element, quarter-wave spacing array using the
 
 
 ```
-$ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -k2bt
+$ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -gehrke1
 ! MHZ Z RI R 1
 ! Z in parallel               50
 ! MHZ LINE   POWER               ZA        LMATCH                  ZIN        ELINE                    PI                          TEE              PHASOR            ZOUT         EOUT        TOTALPH   POWER
@@ -679,7 +679,7 @@ $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -k
 
 
 ```
-$ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -k2bt -direct
+$ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -gehrke1 -direct
 ! MHZ Z RI R 1
 ! Z in parallel           35.911
 ! MHZ LINE   POWER               ZA        LMATCH                  ZIN        ELINE                    PI                          TEE              PHASOR            ZOUT         EOUT        TOTALPH   POWER
@@ -704,9 +704,6 @@ $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -k
 3.8      1  28.178   20.156-17.471j  2.679uH /  758.2pF   127.44-0.00j   59.9258   66.566   3.69uH  351.3pF   3.69uH |  227.2pF  5.705uH  227.2pF  110.682*   127.44+0.00j   59.9258  -44.116  110.682  28.178
 3.8      2  71.822   51.376+20.782j  593.3pF \  926.3nH    50.00+0.00j   59.9258  -44.116        -        -        - |        -        -        -    0.000     50.00+0.00j   59.9258  -44.116    0.000  71.822
 ```
-
-
-
 
 
 Solve the matching network for a 2-element, quarter-wave spacing array using the shunt / ohms law power divider method and a 7uH shunt inductor.
