@@ -424,14 +424,15 @@ def solve(ei, ii, data):
         linez = linez_common
     else:
         linez = [ np.sign(w) * data["feed"] for w in power ]
+
+    if data.get("divider3"):
         method = [ [ lmatch(linez[i], linez_common[i]), lmatch(linez_common[i], linez[i]) ] for i in range(n) ] 
 
-    # ACU
+    # all four posible ACU l-match networks
 
-    # acu = [np.concatenate([[[ np.inf, 0 ]] * 2, [[ np.nan, np.nan ]]*2 ])] * n
     acu = [ np.concatenate([ lmatch(zi[i], linez[i]), lmatch(linez[i], zi[i]) ]) for i in range(n) ]
 
-    # generate all four combinations for each feed line: neg/pos, regular/reverse
+    # generate all possible permutations using these four l-match networks
 
     combo = np.array([ [ i // (4 ** (n - k - 1)) % 4 for k in range(n) ] for i in range(4 ** n) ])
 
@@ -453,19 +454,19 @@ def solve(ei, ii, data):
         print('!')
         for ref in range(n):
 
-            # antenna
+            # antenna output
 
             line = np.array([ ei, ii ]).T
             pin = [ watts(v) for v in line ]
 
-            # ATU
+            # match antenna at ACU
 
             for i, m, reverse in zip(range(n), net, d > 1):
                 if not np.isinf(m[0]): 
                     line[i] = lmatchnet(line[i], m, reverse)
             zo = line[:,0] / line[:,1]
 
-            # ATU to phasor feed lines
+            # ACU feed lines
 
             if data.get("tline2"):
                 x = to_complex(data["tline2"][i], f=frequency, vf=data["vf"])
@@ -476,7 +477,6 @@ def solve(ei, ii, data):
             for num in range(2**n if data.get('divider3') else 1):
 
                 adjust = [0] * n
-                
 
                 if data.get("direct") and data.get("divider2"):
                     if ref != np.argmax(power):
@@ -497,13 +497,11 @@ def solve(ei, ii, data):
 
                 for i, m, reverse in zip(range(n), net, d > 1):
 
-                    # summary (frequency, power, zantenna)
-
                     print('{:<7g} {:2d}'.format(frequency, i + 1), end="")
                     print(' {:7.3f}'.format(pin[i]), end="")
                     print(' {:16.5g}'.format(zi[i]), end="")
 
-                    # ACU using l-match
+                    # ACU l-match
 
                     if reverse:
                         print(' {:>8s} / {:>8s}'.format(component(m[1], frequency), component(m[0], frequency)), end="")
@@ -513,16 +511,15 @@ def solve(ei, ii, data):
                     print(' {:14.2f}'.format(zo[i]), end="")
                     assert(np.abs(zo[i].imag) < 1e-3) 
 
-                    # voltage out of ACU
+                    # voltage at end of ACU feed lines
 
                     print(' {:9.4f} {:8.3f}'.format(np.abs(line[i][0]), np.rad2deg(np.angle(line[i][0]))), end="")
 
-                    zfeed = zo[i].real
-                    ref_theta = np.angle(line[ref][0])
+                    # calculate phase shifts from end of ACU feed lines
 
+                    ref_theta = np.angle(line[ref][0])
                     if data.get("divider2"):
                         ref_theta -= np.deg2rad(data.get("divider"))
-                        zfeed = feede_common**2 / power[i] 
 
                     if data.get("divider3") or data.get("divider1"):
                         ref_theta -= adjust[i] - adjust[ref]
@@ -530,7 +527,11 @@ def solve(ei, ii, data):
                     theta = np.rad2deg(np.angle(line[i][0]) - ref_theta)
                     theta = np.mod(theta + 180, 360) - 180
 
-                    # phase shift
+                    # phasor tee and pi match
+
+                    zfeed = zo[i].real
+                    if data.get("divider2"):
+                        zfeed = feede_common**2 / power[i] 
 
                     v = line[i].copy()
                     x1, x2, x3 = pishift(-theta, zo[i].real, zfeed)
