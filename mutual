@@ -408,7 +408,7 @@ def solve(ei, ii, data):
         feede_common = np.sqrt(data["power"] * parallel(linez_common))
     print('! Z in parallel {:16.5g}'.format(parallel(linez_common)))
 
-    # handle tie
+    # tie antenna feed lines
 
     if data.get("tie"):
         isum = np.sum([ ii[i-1] for i in data["tie"] ])
@@ -418,7 +418,7 @@ def solve(ei, ii, data):
         power = np.abs(ii**2) * zi.real
         linez_common = [ feede_common**2 / w for w in power ]
 
-    # power divider
+    # impedances to match
 
     if data.get("k2bt"):
         linez = linez_common
@@ -428,12 +428,9 @@ def solve(ei, ii, data):
     if data.get("divider3"):
         method = [ [ lmatch(linez[i], linez_common[i]), lmatch(linez_common[i], linez[i]) ] for i in range(n) ] 
 
-    # all four posible ACU l-match networks
+    # all four posible ACU l-match networksk, then generate all permutations using them
 
     acu = [ np.concatenate([ lmatch(zi[i], linez[i]), lmatch(linez[i], zi[i]) ]) for i in range(n) ]
-
-    # generate all possible permutations using these four l-match networks
-
     combo = np.array([ [ i // (4 ** (n - k - 1)) % 4 for k in range(n) ] for i in range(4 ** n) ])
 
     # calculate solutions
