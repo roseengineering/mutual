@@ -169,7 +169,8 @@ def print_drive(zij, data):
             x = to_complex(x, f=frequency, vf=data["vf"])
             ei[i], ii[i] = multiply(tline(np.rad2deg(np.angle(x)), zo=np.abs(x)), [ei[i], ii[i]])
 
-    if data.get("divider1") or data.get("divider2") or data.get("divider3") or data.get("k2bt"):
+    if (data.get("divider1") or data.get("divider2") or data.get("divider3") or 
+        data.get("gehrke1") or data.get("gehrke2")):
         solve(ei, ii, data)
     else:
         zi = ei / ii
@@ -203,8 +204,11 @@ def main(*args):
             kw["debug"] = True
         elif opt == '-autoload':
             kw["autoload"] = True
-        elif opt == '-k2bt':
-            kw["k2bt"] = True
+        elif opt == '-gehrke1':
+            kw["gehrke1"] = True
+        elif opt == '-gehrke2':
+            kw["gehrke2"] = True
+            kw["divider"] = np.double(args.pop(0))
         elif opt == '-z':
             kw["z"] = [ np.complex(x) for x in args.pop(0).split(',') ]
         elif opt == '-divider1':
@@ -377,12 +381,13 @@ def teenet(v, x1, x2, x3):
 
 
 def lmatchnet(v, x, reverse=False):
+    y = 1 / np.array(x)
     if reverse:
-        v = multiply([[1, 1j*x[1]], [0, 1]], v)        # series
-        v = multiply([[1, 0], [1 / (1j*x[0]), 1]], v)  # shunt
+        v = multiply([[1, 1j*x[1]], [0, 1]], v)   # series
+        v = multiply([[1, 0], [-1j*y[0], 1]], v)  # shunt
     else:
-        v = multiply([[1, 0], [1 / (1j*x[0]), 1]], v)  # shunt
-        v = multiply([[1, 1j*x[1]], [0, 1]], v)        # series
+        v = multiply([[1, 0], [-1j*y[0], 1]], v)  # shunt
+        v = multiply([[1, 1j*x[1]], [0, 1]], v)   # series
     return v
                     
 
@@ -420,18 +425,28 @@ def solve(ei, ii, data):
 
     # impedances to match
 
-    if data.get("k2bt"):
+    if data.get("gehrke1") or data.get("gehrke2"):
         linez = linez_common
     else:
         linez = [ np.sign(w) * data["feed"] for w in power ]
 
+    # l-match power divider
+
     if data.get("divider3"):
         method = [ [ lmatch(linez[i], linez_common[i]), lmatch(linez_common[i], linez[i]) ] for i in range(n) ] 
 
-    # all four posible ACU l-match networksk, then generate all permutations using them
+    # all four posible ACU l-match networks, then generate all permutations using them
 
-    acu = [ np.concatenate([ lmatch(zi[i], linez[i]), lmatch(linez[i], zi[i]) ]) for i in range(n) ]
-    combo = np.array([ [ i // (4 ** (n - k - 1)) % 4 for k in range(n) ] for i in range(4 ** n) ])
+    if data.get("gehrke2"):
+        def onematch(za):
+            ra, xa = za.real, za.imag
+            x1 = -(xa + ra**2 / xa)
+            return [ x1, 0], [ np.inf, -za.imag ]
+        acu = [ onematch(zi[i]) for i in range(n) ]
+        combo = np.array([ [ i // (2 ** (n - k - 1)) % 2 for k in range(n) ] for i in range(2 ** n) ])
+    else:
+        acu = [ np.concatenate([ lmatch(zi[i], linez[i]), lmatch(linez[i], zi[i]) ]) for i in range(n) ]
+        combo = np.array([ [ i // (4 ** (n - k - 1)) % 4 for k in range(n) ] for i in range(4 ** n) ])
 
     # calculate solutions
 
@@ -459,8 +474,8 @@ def solve(ei, ii, data):
             # match antenna at ACU
 
             for i, m, reverse in zip(range(n), net, d > 1):
-                if not np.isinf(m[0]): 
-                    line[i] = lmatchnet(line[i], m, reverse)
+                # if not np.isinf(m[0]): 
+                line[i] = lmatchnet(line[i], m, reverse)
             zo = line[:,0] / line[:,1]
 
             # ACU feed lines
@@ -515,7 +530,7 @@ def solve(ei, ii, data):
                     # calculate phase shifts from end of ACU feed lines
 
                     ref_theta = np.angle(line[ref][0])
-                    if data.get("divider2"):
+                    if data.get("divider") is not None:
                         ref_theta -= np.deg2rad(data.get("divider"))
 
                     if data.get("divider3") or data.get("divider1"):
@@ -527,7 +542,7 @@ def solve(ei, ii, data):
                     # phasor tee and pi match
 
                     zfeed = zo[i].real
-                    if data.get("divider2"):
+                    if data.get("divider2") or data.get("gehrke2"):
                         zfeed = feede_common**2 / power[i] 
 
                     v = line[i].copy()

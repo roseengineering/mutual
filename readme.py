@@ -54,7 +54,7 @@ The program takes the following command line options:
 -feed      : ATU to phasor feedline impedance, default 50 ohms
 -z         : set driving impedance of the array instead of simulating
 -direct    : use a direct connection to the common point for the line delivering the most power
--k2bt      : solve phase budget using K2BT method
+-gehrke1   : solve phase budget using K2BT method
 -divider1  : solve phase budget using shunt (ohms law) method
 -divider2  : solve phase budget using tee network method, must pass reference phase shift
 -divider3  : solve phase budget using l-match networks
@@ -132,19 +132,16 @@ The designs from Orr on page 149.  All of which use the Christman matching metho
 
 Solve the matching network for a 3-element in-line, quarter-wave spacing array using the K2BT method.
 
-{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -el 130ft,0 -current 1,1/-90,-1 -k2bt") }
+{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -el 130ft,0 -current 1,1/-90,-1 -gehrke1") }
 
 Solve the matching network for a 4-square, quarter-wave spacing array using the K2BT method.
 
-{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 0,65ft -el 65ft,0 -el 65ft,65ft -current 1,-j,-j,-1 -k2bt -tline1 50/100,50/100,50/100,50/100 -tie 2,3") }
+{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 0,65ft -el 65ft,0 -el 65ft,65ft -current 1,-j,-j,-1 -gehrke1 -tline1 50/100,50/100,50/100,50/100 -tie 2,3") }
 
 Solve the matching network for a 2-element, quarter-wave spacing array using the K2BT method.
 
-{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -k2bt") }
-{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -k2bt -direct") }
-
-
-
+{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -gehrke1") }
+{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -gehrke1 -direct") }
 
 Solve the matching network for a 2-element, quarter-wave spacing array using the shunt / ohms law power divider method and a 7uH shunt inductor.
 
