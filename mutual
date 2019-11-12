@@ -211,6 +211,7 @@ def main(*args):
             kw["divider1"] = True
         elif opt == '-divider2':
             kw["divider2"] = True
+            kw["divider"] = np.double(args.pop(0))
         elif opt == '-divider3':
             kw["divider3"] = True
         elif opt == '-freq':
@@ -520,6 +521,7 @@ def solve(ei, ii, data):
                     ref_theta = np.angle(line[ref][0])
 
                     if data.get("divider2"):
+                        ref_theta -= np.deg2rad(data.get("divider"))
                         zfeed = feede_common**2 / power[i] 
 
                     if data.get("divider3") or data.get("divider1"):
