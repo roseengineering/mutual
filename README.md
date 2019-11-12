@@ -205,7 +205,7 @@ $ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -curr
 ```
 
 
-The Orr desgin above but with 90 degree transmission lines to the elements for current forcing.
+The Orr design above but with 90 degree transmission lines to the elements for current forcing.
 
 
 ```
@@ -230,7 +230,7 @@ $ mutual -loss 9 -diam .7in -height 20ft -freq 7.1 -el 0,0 -el 35.14ft,0 -autolo
 ```
 
 
-All designs from Orr on page 149.
+The designs from Orr on page 149.  All of which use the Christman matching method.
 
 
 ```
