@@ -405,15 +405,13 @@ def solve(ei, ii, data):
     power = np.abs(ii**2) * zi.real
     linez_common = np.array([ feede_common**2 / w for w in power ])
 
-    # common point
+    # direct connection
 
     if data.get("direct"):
-        direct_common = np.argmax(power) 
-        linez_common *= power[direct_common] / data["power"]
+        linez_common *= power[np.argmax(power)] / data["power"]
         feede_common = np.sqrt(data["power"] * parallel(linez_common))
-    print('! Z in parallel {:16.5g}'.format(parallel(linez_common)))
 
-    # tie antenna feed lines
+    # tie antenna feed line
 
     if data.get("tie"):
         isum = np.sum([ ii[i-1] for i in data["tie"] ])
@@ -423,17 +421,12 @@ def solve(ei, ii, data):
         power = np.abs(ii**2) * zi.real
         linez_common = [ feede_common**2 / w for w in power ]
 
-    # impedances to match
+    # acu
 
-    if data.get("gehrke1") or data.get("gehrke2"):
+    if data.get("gehrke1"):
         linez = linez_common
     else:
         linez = [ np.sign(w) * data["feed"] for w in power ]
-
-    # l-match power divider
-
-    if data.get("divider3"):
-        method = [ [ lmatch(linez[i], linez_common[i]), lmatch(linez_common[i], linez[i]) ] for i in range(n) ] 
 
     # all four posible ACU l-match networks, then generate all permutations using them
 
@@ -447,6 +440,11 @@ def solve(ei, ii, data):
     else:
         acu = [ np.concatenate([ lmatch(zi[i], linez[i]), lmatch(linez[i], zi[i]) ]) for i in range(n) ]
         combo = np.array([ [ i // (4 ** (n - k - 1)) % 4 for k in range(n) ] for i in range(4 ** n) ])
+
+    # l-match power divider
+
+    if data.get("divider3"):
+        method = [ [ lmatch(linez[i], linez_common[i]), lmatch(linez_common[i], linez[i]) ] for i in range(n) ] 
 
     # calculate solutions
 
@@ -474,7 +472,6 @@ def solve(ei, ii, data):
             # match antenna at ACU
 
             for i, m, reverse in zip(range(n), net, d > 1):
-                # if not np.isinf(m[0]): 
                 line[i] = lmatchnet(line[i], m, reverse)
             zo = line[:,0] / line[:,1]
 
@@ -484,15 +481,21 @@ def solve(ei, ii, data):
                 x = to_complex(data["tline2"][i], f=frequency, vf=data["vf"])
                 line[i] = multiply(tline(np.rad2deg(np.angle(x)), zo=np.abs(x)), line[i])
 
+            if data.get("direct"):
+                direct = np.argmax(power)
+                if data.get("divider2") or data.get("gehrke2"):
+                    feede_common = np.sqrt(power[direct] * (line[direct][0] / line[direct][1]).real)
+                elif not data.get("divider1"):
+                    raise ValueError("direct not supported with gehrke1 or divider3")
+                if data.get("divider1") and direct != ref: continue
+                # if kw.get("direct") and (kw.get("gehrke1") or kw.get("divider3")):
+
+
             ################
 
             for num in range(2**n if data.get('divider3') else 1):
 
                 adjust = [0] * n
-
-                if data.get("direct") and data.get("divider2"):
-                    if ref != np.argmax(power):
-                        continue
 
                 if data.get("divider3"):
                     for i in range(n):
@@ -543,23 +546,23 @@ def solve(ei, ii, data):
 
                     zfeed = zo[i].real
                     if data.get("divider2") or data.get("gehrke2"):
-                        zfeed = feede_common**2 / power[i] 
+                        zfeed = feede_common**2 / power[i]
 
                     v = line[i].copy()
                     x1, x2, x3 = pishift(-theta, zo[i].real, zfeed)
                     print(' {:>8s} {:>8s} {:>8s}'.format(component(x1, frequency), component(x2, frequency), component(x3, frequency)), end="")
                     if np.abs(theta) > 1e-3: 
                         v = pinet(v, x1, x2, x3)
-                    assert(np.abs((v[0]/v[1]).imag) < 1e-3) 
-                    assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
+                    # assert(np.abs((v[0]/v[1]).imag) < 1e-3) 
+                    # assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
 
                     v = line[i].copy()
                     x1, x2, x3 = teeshift(-theta, zo[i].real, zfeed)
                     print(' | {:>8s} {:>8s} {:>8s}'.format(component(x1, frequency), component(x2, frequency), component(x3, frequency)), end="")
                     if np.abs(theta) > 1e-3: 
                         v = teenet(v, x1, x2, x3)
-                    assert(np.abs((v[0]/v[1]).imag) < 1e-3) 
-                    assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
+                    # assert(np.abs((v[0]/v[1]).imag) < 1e-3) 
+                    # assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
 
                     # results
 
@@ -567,14 +570,14 @@ def solve(ei, ii, data):
                     print(' {:8.3f}{:1s}'.format(theta, '*' if np.abs(theta) > 100 else ''), end="")
                     print(' {:14.2f}'.format(zout), end="")
                     print(' {:9.4f} {:8.3f}'.format(np.abs(v[0]), np.rad2deg(np.angle(v[0]))), end="")
-                    assert(np.abs(zout.imag) < 1e-3) 
+                    # assert(np.abs(zout.imag) < 1e-3) 
 
                     ###################
 
                     if data.get("divider3"):
                         index = 1 if num & 2**i else 0
                         reverse = 1 if np.isnan(method[i][0][index][0]) else 0
-                        if not data.get("direct") or direct_common != i:
+                        if not data.get("direct") or direct != i:
                             x = method[i][reverse][index]
                             v = lmatchnet(v, x, reverse)
                         else:
@@ -591,7 +594,7 @@ def solve(ei, ii, data):
                         assert(np.abs(zout.imag) < 1e-3) 
 
                     if data.get("divider1"):
-                        if not data.get("direct") or direct_common != i:
+                        if not data.get("direct") or direct != i:
                             x = shuntmatch(P=watts(line[i]), R=linez[i], V=feede_common, L=data["l"], F=frequency*1e6, K=data["k"], flag=1)
                             v = teenet(v, *x)
                             print(' {:8.3f}'.format(np.rad2deg(-adjust[i])), end="")
@@ -606,7 +609,7 @@ def solve(ei, ii, data):
 
                     print(' {:8.3f}'.format(np.rad2deg(np.angle(line[i][0]) - np.angle(v[0]))), end="")
                     print(' {:7.3f}'.format(watts(v)), end="")
-                    assert(np.abs(watts(v) - pin[i]) < 1e-3)
+                    # assert(np.abs(watts(v) - pin[i]) < 1e-3)
                     print()
 
 
