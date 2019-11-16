@@ -53,12 +53,9 @@ The program takes the following command line options:
 -output    : transmitter coax feedline impedance, default 50 ohms
 -feed      : ATU to phasor feedline impedance, default 50 ohms
 -z         : set driving impedance of the array instead of simulating
--direct    : use a direct connection to the common point for the line delivering the most power
--gehrke1   : solve phase budget using K2BT method using a l-match
--gehrke2   : solve phase budget using K2BT method using a shunt or series match
--divider1  : solve phase budget using shunt (ohms law) method
--divider2  : solve phase budget using tee network method, must pass reference phase shift
--divider3  : solve phase budget using l-match networks
+-gehrke    : solve phase budget using K2BT method
+-shunt     : solve phase budget using shunt, or ohms law, method
+-tee       : solve phase budget using tee network method, must pass reference phase shift
 ```
 
 Note the -diam, -height, and -el options can take the following suffix modifiers:
@@ -133,30 +130,23 @@ The designs from Orr on page 149.  All of which use the Christman matching metho
 
 Solve the matching network for a 3-element in-line, quarter-wave spacing array using the K2BT method.
 
-{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -el 130ft,0 -current 1,1/-90,-1 -gehrke1") }
+{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -el 130ft,0 -current 1,1/-90,-1 -gehrke") }
 
 Solve the matching network for a 4-square, quarter-wave spacing array using the K2BT method.
 
-{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 0,65ft -el 65ft,0 -el 65ft,65ft -current 1,-j,-j,-1 -gehrke1 -tline1 50/100,50/100,50/100,50/100 -tie 2,3") }
+{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 0,65ft -el 65ft,0 -el 65ft,65ft -current 1,-j,-j,-1 -gehrke -tline1 50/100,50/100,50/100,50/100 -tie 2,3") }
 
 Solve the matching network for a 2-element, quarter-wave spacing array using the K2BT method.  (Note, this method already provides a direct connection).
 
-{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -gehrke1") }
-{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -gehrke2 45") }
+{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -gehrke") }
 
 Solve the matching network for a 2-element, quarter-wave spacing array using the shunt / ohms law power divider method and a 7uH shunt inductor.
 
-{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -l 7e-6 -current 1,-j -divider1") }
-{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -l 7e-6 -current 1,-j -divider1 -direct") }
+{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -l 7e-6 -current 1,-j -shunt") }
 
 Solve the matching network for a 2-element, quarter-wave spacing array using the tee power divider method.
 
-{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -divider2 90") }
-{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -divider2 0 -direct") }
-
-Solve the matching network for a 2-element, quarter-wave spacing array using L-match power dividers.
-
-{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -divider3") }
+{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -tee 90") }
 
 """)
 

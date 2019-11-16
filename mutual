@@ -169,8 +169,7 @@ def print_drive(zij, data):
             x = to_complex(x, f=frequency, vf=data["vf"])
             ei[i], ii[i] = multiply(tline(np.rad2deg(np.angle(x)), zo=np.abs(x)), [ei[i], ii[i]])
 
-    if (data.get("divider1") or data.get("divider2") or data.get("divider3") or 
-        data.get("gehrke1") or data.get("gehrke2")):
+    if data.get("gehrke") or data.get("tee") is not None or data.get("shunt"): 
         solve(ei, ii, data)
     else:
         zi = ei / ii
@@ -204,20 +203,14 @@ def main(*args):
             kw["debug"] = True
         elif opt == '-autoload':
             kw["autoload"] = True
-        elif opt == '-gehrke1':
-            kw["gehrke1"] = True
-        elif opt == '-gehrke2':
-            kw["gehrke2"] = True
-            kw["divider"] = np.double(args.pop(0))
+        elif opt == '-gehrke':
+            kw["gehrke"] = True
         elif opt == '-z':
             kw["z"] = [ np.complex(x) for x in args.pop(0).split(',') ]
-        elif opt == '-divider1':
-            kw["divider1"] = True
-        elif opt == '-divider2':
-            kw["divider2"] = True
-            kw["divider"] = np.double(args.pop(0))
-        elif opt == '-divider3':
-            kw["divider3"] = True
+        elif opt == '-shunt':
+            kw["shunt"] = True
+        elif opt == '-tee':
+            kw["tee"] = np.double(args.pop(0))
         elif opt == '-freq':
             kw["frequencies"] = [ np.double(x) for x in args.pop(0).split(',') ]
         elif opt == '-loss':
@@ -252,8 +245,6 @@ def main(*args):
             kw["feed"] = np.double(args.pop(0))
         elif opt == '-output':
             kw["output"] = np.double(args.pop(0))
-        elif opt == '-direct':
-            kw["direct"] = True
         else:
             raise ValueError("unknown option:", opt)
 
@@ -391,230 +382,149 @@ def lmatchnet(v, x, reverse=False):
     return v
                     
 
+
+###############################################
+
 def solve(ei, ii, data):
-    n = len(ei)
-    frequency = data["frequency"]
-    zi = ei / ii
-    feede_common = np.sqrt(data["power"] * data["output"])
-
-    # transmitter power 
-
-    ratio = np.sqrt(data["power"] / np.sum(np.abs(ii**2) * zi.real))
-    ei *= ratio
-    ii *= ratio
-    power = np.abs(ii**2) * zi.real
-    linez_common = np.array([ feede_common**2 / w for w in power ])
-
-    # direct connection
-
-    if data.get("direct"):
-        linez_common *= power[np.argmax(power)] / data["power"]
-        feede_common = np.sqrt(data["power"] * parallel(linez_common))
-
-    # tie antenna feed line
-
-    if data.get("tie"):
-        isum = np.sum([ ii[i-1] for i in data["tie"] ])
-        for i in data["tie"]: 
-            ii[i-1] = isum
-        zi = ei / ii
-        power = np.abs(ii**2) * zi.real
-        linez_common = [ feede_common**2 / w for w in power ]
-
-    # acu
-
-    if data.get("gehrke1"):
-        linez = linez_common
-    else:
-        linez = [ np.sign(w) * data["feed"] for w in power ]
-
-    # all four posible ACU l-match networks, then generate all permutations using them
-
-    if data.get("gehrke2"):
-        def onematch(za):
-            ra, xa = za.real, za.imag
-            x1 = -(xa + ra**2 / xa)
-            return [ x1, 0], [ np.inf, -za.imag ]
-        acu = [ onematch(zi[i]) for i in range(n) ]
-        combo = np.array([ [ i // (2 ** (n - k - 1)) % 2 for k in range(n) ] for i in range(2 ** n) ])
-    else:
-        acu = [ np.concatenate([ lmatch(zi[i], linez[i]), lmatch(linez[i], zi[i]) ]) for i in range(n) ]
-        combo = np.array([ [ i // (4 ** (n - k - 1)) % 4 for k in range(n) ] for i in range(4 ** n) ])
-
-    # l-match power divider
-
-    if data.get("divider3"):
-        method = [ [ lmatch(linez[i], linez_common[i]), lmatch(linez_common[i], linez[i]) ] for i in range(n) ] 
-
-    # calculate solutions
 
     print("! MHZ LINE   POWER               ZA        LMATCH                  ZIN        ELINE                    ", end="")
     print("PI                          TEE              PHASOR            ZOUT         EOUT      ", end="")
-    if data.get("divider3"):
-        print("        LMATCH          SHIFT          ZFEED        EFEED      ", end="")
-    if data.get("divider1"):
+    if data.get("shunt"):
         print("  SHUNTPH /     N          ZFEED         EFEED      ", end="")
-    print("  TOTALPH   POWER", end="")
     print()
 
-    for d in combo:
-        net = np.array([ acu[i][k] for i, k in enumerate(d) ])
+    n = len(ei)
+    zi = ei / ii
+    power = np.abs(ii**2) * zi.real
+    ratio = np.sqrt(data["power"] / np.sum(power))
+    ei *= ratio
+    ii *= ratio
+    power = np.abs(ii**2) * zi.real
+
+    # tie
+
+    if data.get("tie"):
+        isum = np.sum([ ii[i-1] for i in data["tie"] ])
+        for i in data["tie"]: ii[i-1] = isum
+        zi = ei / ii
+        power = np.abs(ii**2) * zi.real
+
+    # acu
+
+    feede_common = np.sqrt(data["power"] * data["output"])
+    acuz = [ np.sign(w) * data["feed"] for w in power ]
+    divz = np.array([ feede_common**2 / w for w in power ])
+    if data.get("gehrke"):
+        acuz = divz
+    if data.get("shunt"):
+        divz = acuz
+
+    # all four posible ACU l-match networks
+
+    aculm = [ np.concatenate([ lmatch(zi[i], acuz[i]), lmatch(acuz[i], zi[i]) ]) for i in range(n) ]
+    combo = np.array([ [ i // (4 ** (n - k - 1)) % 4 for k in range(n) ] for i in range(4 ** n) ])
+
+    for neti in combo:
+        net = np.array([ aculm[i][k] for i, k in enumerate(neti) ])
         if np.any(np.isnan(net.flatten())): continue
 
         print('!')
         for ref in range(n):
-
-            # antenna output
-
             line = np.array([ ei, ii ]).T
-            pin = [ watts(v) for v in line ]
-
-            # match antenna at ACU
-
-            for i, m, reverse in zip(range(n), net, d > 1):
+            for i, m, reverse in zip(range(n), net, neti > 1):
                 line[i] = lmatchnet(line[i], m, reverse)
-            zo = line[:,0] / line[:,1]
-
-            # ACU feed lines
 
             if data.get("tline2"):
-                x = to_complex(data["tline2"][i], f=frequency, vf=data["vf"])
+                x = to_complex(data["tline2"][i], f=data["frequency"], vf=data["vf"])
                 line[i] = multiply(tline(np.rad2deg(np.angle(x)), zo=np.abs(x)), line[i])
 
-            if data.get("direct"):
-                direct = np.argmax(power)
-                if data.get("divider2") or data.get("gehrke2"):
-                    feede_common = np.sqrt(power[direct] * (line[direct][0] / line[direct][1]).real)
-                elif not data.get("divider1"):
-                    raise ValueError("direct not supported with gehrke1 or divider3")
-                if data.get("divider1") and direct != ref: continue
-                # if kw.get("direct") and (kw.get("gehrke1") or kw.get("divider3")):
+            print_solution(line=line, zi=zi, ref=ref, net=net, neti=neti, divz=divz, data=data)
 
 
-            ################
 
-            for num in range(2**n if data.get('divider3') else 1):
+def _assert(condition):
+    if not condition:
+        print(" ?!", end="")
 
-                adjust = [0] * n
+def print_solution(line, zi, ref, net, neti, divz, data):
+    n = len(line)
+    adjust = [0] * n
+    power = [ watts(v) for v in line ]
+    frequency = data["frequency"]
 
-                if data.get("divider3"):
-                    for i in range(n):
-                        index = 1 if num & 2**i else 0
-                        reverse = 1 if np.isnan(method[i][0][index][0]) else 0
-                        v = [linez[i], 1]
-                        v = lmatchnet(v, method[i][reverse][index], reverse)
-                        adjust[i] = np.angle(v[0])
+    for i, m, reverse in zip(range(n), net, neti > 1):
 
-                if data.get("divider1"):
-                    for i in range(n):
-                        if np.abs((line[i][0] / line[i][1]).real - feede_common**2 / power[i]) > 1e-3:
-                            adjust[i] = shuntmatch(P=watts(line[i]), R=linez[i], V=feede_common, L=data["l"], F=frequency*1e6, K=data["k"])
+        print('{:<7g} {:2d}'.format(frequency, i + 1), end="")
+        print(' {:7.3f}'.format(power[i]), end="")
+        print(' {:16.5g}'.format(zi[i]), end="")
 
-                for i, m, reverse in zip(range(n), net, d > 1):
+        # ACU l-match
 
-                    print('{:<7g} {:2d}'.format(frequency, i + 1), end="")
-                    print(' {:7.3f}'.format(pin[i]), end="")
-                    print(' {:16.5g}'.format(zi[i]), end="")
+        if reverse:
+            print(' {:>8s} / {:>8s}'.format(component(m[1], frequency), component(m[0], frequency)), end="")
+        else:
+            print(' {:>8s} \\ {:>8s}'.format(component(m[0], frequency), component(m[1], frequency)), end="")
 
-                    # ACU l-match
+        zo = line[i][0] / line[i][1]
+        print(' {:14.2f}'.format(zo), end="")
+        print(' {:9.4f} {:8.3f}'.format(np.abs(line[i][0]), np.rad2deg(np.angle(line[i][0]))), end="")
+        _assert(np.abs(zo.imag) < 1e-3) 
 
-                    if reverse:
-                        print(' {:>8s} / {:>8s}'.format(component(m[1], frequency), component(m[0], frequency)), end="")
-                    else:
-                        print(' {:>8s} \\ {:>8s}'.format(component(m[0], frequency), component(m[1], frequency)), end="")
+        # calculate phase shifts from end of ACU feed lines
 
-                    print(' {:14.2f}'.format(zo[i]), end="")
-                    assert(np.abs(zo[i].imag) < 1e-3) 
+        ref_theta = np.angle(line[ref][0])
+        if data.get("tee") is not None:
+            ref_theta -= np.deg2rad(data.get("tee"))
+        if data.get("shunt"):
+            ref_theta -= adjust[i] - adjust[ref]
+        theta = np.rad2deg(np.angle(line[i][0]) - ref_theta)
+        theta = np.mod(theta + 180, 360) - 180
 
-                    # voltage at end of ACU feed lines
+        # phasor tee and pi match
 
-                    print(' {:9.4f} {:8.3f}'.format(np.abs(line[i][0]), np.rad2deg(np.angle(line[i][0]))), end="")
+        v = line[i].copy()
+        x1, x2, x3 = pishift(-theta, zo.real, divz[i])
+        print(' {:>8s} {:>8s} {:>8s}'.format(component(x1, frequency), component(x2, frequency), component(x3, frequency)), end="")
+        if np.abs(theta) > 1e-3: v = pinet(v, x1, x2, x3)
+        res = v[0] / v[1]
+        _assert(np.abs(res.imag) < 1e-3) 
+        _assert(np.abs(res.real - divz[i]) < 1e-3) 
+        _assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
 
-                    # calculate phase shifts from end of ACU feed lines
+        v = line[i].copy()
+        x1, x2, x3 = teeshift(-theta, zo.real, divz[i])
+        print(' | {:>8s} {:>8s} {:>8s}'.format(component(x1, frequency), component(x2, frequency), component(x3, frequency)), end="")
+        if np.abs(theta) > 1e-3: v = teenet(v, x1, x2, x3)
+        res = v[0] / v[1]
+        _assert(np.abs(res.imag) < 1e-3) 
+        _assert(np.abs(res.real - divz[i]) < 1e-3) 
+        _assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
 
-                    ref_theta = np.angle(line[ref][0])
-                    if data.get("divider") is not None:
-                        ref_theta -= np.deg2rad(data.get("divider"))
+        # results
 
-                    if data.get("divider3") or data.get("divider1"):
-                        ref_theta -= adjust[i] - adjust[ref]
+        print(' {:8.3f}{:1s}'.format(theta, '*' if np.abs(theta) > 100 else ''), end="")
+        print(' {:14.2f}'.format(v[0] / v[1]), end="")
+        print(' {:9.4f} {:8.3f}'.format(np.abs(v[0]), np.rad2deg(np.angle(v[0]))), end="")
 
-                    theta = np.rad2deg(np.angle(line[i][0]) - ref_theta)
-                    theta = np.mod(theta + 180, 360) - 180
+        if data.get("shunt"):
+            pass
+            # x = shuntmatch(P=watts(line[i]), R=linez[i], V=feede_common, L=data["l"], F=frequency*1e6, K=data["k"], flag=1)
+            # v = teenet(v, *x)
+            # print(' {:8.3f}'.format(np.rad2deg(-adjust[i])), end="")
+            # print(' / {:5.3f}'.format(np.sqrt(x[1] / (x[1] + x[2]))), end="")
+            # # if not data.get("direct") or ref != i:
+            # # else: print('        - /     -', end="")
+            # zout = v[0] / v[1]
+            # print(' {:14.2f} '.format(zout), end="")
+            # print(' {:9.4f} {:8.3f}'.format(np.abs(v[0]), np.rad2deg(np.angle(v[0]))), end="")
 
-                    # phasor tee and pi match
-
-                    zfeed = zo[i].real
-                    if data.get("divider2") or data.get("gehrke2"):
-                        zfeed = feede_common**2 / power[i]
-
-                    v = line[i].copy()
-                    x1, x2, x3 = pishift(-theta, zo[i].real, zfeed)
-                    print(' {:>8s} {:>8s} {:>8s}'.format(component(x1, frequency), component(x2, frequency), component(x3, frequency)), end="")
-                    if np.abs(theta) > 1e-3: 
-                        v = pinet(v, x1, x2, x3)
-                    # assert(np.abs((v[0]/v[1]).imag) < 1e-3) 
-                    # assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
-
-                    v = line[i].copy()
-                    x1, x2, x3 = teeshift(-theta, zo[i].real, zfeed)
-                    print(' | {:>8s} {:>8s} {:>8s}'.format(component(x1, frequency), component(x2, frequency), component(x3, frequency)), end="")
-                    if np.abs(theta) > 1e-3: 
-                        v = teenet(v, x1, x2, x3)
-                    # assert(np.abs((v[0]/v[1]).imag) < 1e-3) 
-                    # assert(np.abs(np.mod(np.rad2deg(np.angle(v[0]) - ref_theta) + 180, 360) - 180) < 1e-3)
-
-                    # results
-
-                    zout = v[0] / v[1]
-                    print(' {:8.3f}{:1s}'.format(theta, '*' if np.abs(theta) > 100 else ''), end="")
-                    print(' {:14.2f}'.format(zout), end="")
-                    print(' {:9.4f} {:8.3f}'.format(np.abs(v[0]), np.rad2deg(np.angle(v[0]))), end="")
-                    # assert(np.abs(zout.imag) < 1e-3) 
-
-                    ###################
-
-                    if data.get("divider3"):
-                        index = 1 if num & 2**i else 0
-                        reverse = 1 if np.isnan(method[i][0][index][0]) else 0
-                        if not data.get("direct") or direct != i:
-                            x = method[i][reverse][index]
-                            v = lmatchnet(v, x, reverse)
-                        else:
-                            x = [ np.nan ] * 2
-                        if reverse:
-                            print(' {:>8s} / {:>8s}'.format(component(x[1], frequency), component(x[0], frequency)), end="")
-                        else:
-                            print(' {:>8s} \\ {:>8s}'.format(component(x[0], frequency), component(x[1], frequency)), end="")
-
-                        zout = v[0] / v[1]
-                        print(' {:8.3f}'.format(np.rad2deg(-adjust[i])), end="")
-                        print(' {:14.2f}'.format(zout), end="")
-                        print(' {:9.4f} {:8.3f}'.format(np.abs(v[0]), np.rad2deg(np.angle(v[0]))), end="")
-                        assert(np.abs(zout.imag) < 1e-3) 
-
-                    if data.get("divider1"):
-                        if not data.get("direct") or direct != i:
-                            x = shuntmatch(P=watts(line[i]), R=linez[i], V=feede_common, L=data["l"], F=frequency*1e6, K=data["k"], flag=1)
-                            v = teenet(v, *x)
-                            print(' {:8.3f}'.format(np.rad2deg(-adjust[i])), end="")
-                            print(' / {:5.3f}'.format(np.sqrt(x[1] / (x[1] + x[2]))), end="")
-                        else:
-                            print('        - /     -', end="")
-                        zout = v[0] / v[1]
-                        print(' {:14.2f} '.format(zout), end="")
-                        print(' {:9.4f} {:8.3f}'.format(np.abs(v[0]), np.rad2deg(np.angle(v[0]))), end="")
-
-                    ###################
-
-                    print(' {:8.3f}'.format(np.rad2deg(np.angle(line[i][0]) - np.angle(v[0]))), end="")
-                    print(' {:7.3f}'.format(watts(v)), end="")
-                    # assert(np.abs(watts(v) - pin[i]) < 1e-3)
-                    print()
+        print()
 
 
 if __name__ == "__main__":
     import sys
     np.seterr(divide='ignore', invalid='ignore')
     main(*sys.argv[1:])
+
+            
 
