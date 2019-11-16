@@ -54,7 +54,8 @@ The program takes the following command line options:
 -feed      : ATU to phasor feedline impedance, default 50 ohms
 -z         : set driving impedance of the array instead of simulating
 -gehrke    : solve phase budget using K2BT method
--shunt     : solve phase budget using shunt, or ohms law, method
+-shunt1    : solve phase budget using shunt, or ohms law, method 
+-shunt2    : solve phase budget using shunt, or ohms law, method; direct connection
 -tee       : solve phase budget using tee network method, must pass reference phase shift
 ```
 
@@ -142,7 +143,8 @@ Solve the matching network for a 2-element, quarter-wave spacing array using the
 
 Solve the matching network for a 2-element, quarter-wave spacing array using the shunt / ohms law power divider method and a 7uH shunt inductor.
 
-{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -l 7e-6 -current 1,-j -shunt") }
+{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -l 7e-6 -current 1,-j -shunt1") }
+{ run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -l 7e-6 -current 1,-j -shunt2") }
 
 Solve the matching network for a 2-element, quarter-wave spacing array using the tee power divider method.
 

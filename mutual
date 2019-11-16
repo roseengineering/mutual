@@ -18,6 +18,10 @@ defaults = {
 }
 
 
+#################################
+# nec2 routines
+#################################
+
 def run_process(text):
     name = tempfile.mktemp()
     command = 'nec2c -i %s -o /dev/stdout' % name
@@ -79,11 +83,6 @@ def generate_input(data, voltages):
     return text
 
 
-def multiply(zij, ii):
-    ei = np.matrix(zij) * np.matrix(ii).T
-    return np.array(ei).T[0]
-
-
 def autoload(data):
     d = { "element": [ (0, 0) ] }
     ei = [ 1 ]
@@ -111,6 +110,25 @@ def error_norm(zij, data):
     ei = multiply(zij, ii)
     err = ii - run_nec(generate_input(data, ei))
     print('! error norm       = {:g}'.format(np.linalg.norm(err)))
+
+
+def print_mutual(zij, data):
+    n = zij.shape[0]
+    frequency = data["frequency"]
+    print('{:<8g}'.format(frequency), end="")
+    for i in range(n):
+        if i > 0: print('{:<8s}'.format(''), end="")
+        print(','.join([ ' {:8.4f} {:+8.4f}j'.format(
+              zij[i][j].real, zij[i][j].imag) for j in range(n) ]))
+
+
+#################################
+# utilities
+#################################
+
+def multiply(zij, ii):
+    ei = np.matrix(zij) * np.matrix(ii).T
+    return np.array(ei).T[0]
 
 
 def to_complex(buf, f=None, vf=None):
@@ -144,6 +162,44 @@ def to_distance(buf):
     return np.double(buf)
     
 
+def bisect(f, a, b):
+    for n in range(100):
+        c = (a + b) / 2
+        fc = f(c)
+        fa = f(a)
+        if np.abs(fc - fa) < 1e-5: break
+        if np.sign(fc) == np.sign(fa): a = c
+        else: b = c
+    return c
+
+
+def component(x, f, precision=5):
+    if np.isinf(x) or np.isnan(x) or x == 0: return '-'
+    assert(x.imag == 0)
+    f = f * 1e6
+    w = 2 * np.pi * f
+    x = 1 / (w * x) if x < 0 else x / w
+    UNITS = 'FH'
+    SUFFIX = ["f", "p", "n", "u", "m", "", "k", "M", "G"]
+    exp = np.floor(np.log10(np.abs(x)))
+    mant = np.round(x / 10**exp, precision-1)
+    p = np.int(exp // 3)
+    value = (mant * 10**exp) / 10**(3 * p)
+    if p - 4 >= 0 or p - 4 < -len(SUFFIX):
+        return "%7.2g%s" % (np.abs(x), UNITS[0 if x < 0 else 1])
+    else:
+        return "%6.4g%s%s" % (np.abs(value), SUFFIX[p-4], UNITS[0 if x < 0 else 1])
+
+
+def _assert(condition):
+    if not condition:
+        print(" ?!", end="")
+
+
+#################################
+# rf routines
+#################################
+
 def parallel(zi):
     return 1 / np.sum([ 1 / x for x in zi ])
 
@@ -155,6 +211,80 @@ def tline(deg, zo=50):
         [ 1j * np.sin(theta) / zo, np.cos(theta) ]
     ])
 
+
+def lmatch(ZS, ZL):
+    """
+    ZS <---+---X2--< ZL
+           X1   
+    """
+    RS, XS = ZS.real, ZS.imag
+    RL, XL = ZL.real, ZL.imag
+    QS = RS / RL - 1 + XS**2 / (RS * RL)
+    Q = np.sqrt(QS)
+    X1 = (XS + np.array([1, -1]) * Q * RS) / (RS / RL - 1)
+    X2 = -(XL + np.array([1, -1]) * Q * RL)
+    return np.array([X1, X2]).T
+
+
+def pishift(theta, r1, r2):
+    x1, x2, x3 = teeshift(theta, 1/r1, 1/r2)
+    return -1/x1, -1/x2, -1/x3
+
+
+def teeshift(theta, r1, r2):
+    theta = np.deg2rad(theta)
+    zo = np.sqrt(np.abs(r1 * r2))
+    x1 = np.sign(r1) * (zo - np.abs(r1) * np.cos(theta)) / np.sin(theta)
+    x2 = np.sign(r1) * -zo / np.sin(theta)
+    x3 = np.sign(r1) * (zo - np.abs(r2) * np.cos(theta)) / np.sin(theta)
+    return x1, x2, x3
+
+
+def watts(v):
+    return np.abs(v[1])**2 * (v[0]/v[1]).real
+
+
+def pinet(v, x1, x2, x3):
+    v = np.array(v)
+    y1 = 1 / x1
+    y3 = 1 / x3
+    v = multiply([[1, 0], [-1j*y1, 1]], v)  # shunt
+    v = multiply([[1, 1j*x2], [0, 1]], v)   # series
+    v = multiply([[1, 0], [-1j*y3, 1]], v)  # shunt
+    return v
+
+
+def teenet(v, x1, x2, x3):
+    v = np.array(v)
+    y2 = 1 / x2
+    v = multiply([[1, 1j*x1], [0, 1]], v)   # series
+    v = multiply([[1, 0], [-1j*y2, 1]], v)  # shunt
+    v = multiply([[1, 1j*x3], [0, 1]], v)   # series
+    return v
+
+
+def lmatchnet(v, x, reverse=False):
+    y = 1 / np.array(x)
+    if reverse:
+        v = multiply([[1, 1j*x[1]], [0, 1]], v)   # series
+        v = multiply([[1, 0], [-1j*y[0], 1]], v)  # shunt
+    else:
+        v = multiply([[1, 0], [-1j*y[0], 1]], v)  # shunt
+        v = multiply([[1, 1j*x[1]], [0, 1]], v)   # series
+    return v
+                    
+
+def shuntdivider(v, L1, L, K, F=0):
+    w = 2 * np.pi * F * 1e6 if F else 1
+    L1 = w * L1
+    L2 = w * L - L1
+    M = K * np.sqrt(L1 * L2)
+    return teenet(v, -M, L1 + M, L2 + M)
+
+
+#################################
+# main
+#################################
 
 def print_drive(zij, data):
     n = zij.shape[0]
@@ -169,7 +299,7 @@ def print_drive(zij, data):
             x = to_complex(x, f=frequency, vf=data["vf"])
             ei[i], ii[i] = multiply(tline(np.rad2deg(np.angle(x)), zo=np.abs(x)), [ei[i], ii[i]])
 
-    if data.get("gehrke") or data.get("tee") is not None or data.get("shunt"): 
+    if data.get("gehrke") or data.get("tee") is not None or data.get("shunt1") or data.get("shunt2"): 
         solve(ei, ii, data)
     else:
         zi = ei / ii
@@ -182,16 +312,6 @@ def print_drive(zij, data):
         print(','.join([ ' {:8.4f} {:8.4f}'.format(np.abs(x), np.rad2deg(np.angle(x))) for x in ii ]))
         print('! Z in parallel    =', end="")
         print(' {:8.4f} {:+8.4f}j'.format(ztot.real, ztot.imag))
-
-
-def print_mutual(zij, data):
-    n = zij.shape[0]
-    frequency = data["frequency"]
-    print('{:<8g}'.format(frequency), end="")
-    for i in range(n):
-        if i > 0: print('{:<8s}'.format(''), end="")
-        print(','.join([ ' {:8.4f} {:+8.4f}j'.format(
-              zij[i][j].real, zij[i][j].imag) for j in range(n) ]))
 
    
 def main(*args):
@@ -207,8 +327,10 @@ def main(*args):
             kw["gehrke"] = True
         elif opt == '-z':
             kw["z"] = [ np.complex(x) for x in args.pop(0).split(',') ]
-        elif opt == '-shunt':
-            kw["shunt"] = True
+        elif opt == '-shunt1':
+            kw["shunt1"] = True
+        elif opt == '-shunt2':
+            kw["shunt2"] = True
         elif opt == '-tee':
             kw["tee"] = np.double(args.pop(0))
         elif opt == '-freq':
@@ -273,123 +395,15 @@ def main(*args):
             print_mutual(zij, kw)
 
 
-######################
-
-def bisect(f, a, b):
-    for n in range(100):
-        c = (a + b) / 2
-        if np.abs(f(c) - f(a)) < 1e-5: break
-        if np.sign(f(c)) == np.sign(f(a)): a = c
-        else: b= c
-    return c
-
-
-def shuntmatch(P, R, V, L, F, K, flag=None):
-    #  V o---L1---+----(-M)--+ P
-    #            L2          R
-    sign = 1 
-    W = 2 * np.pi * F
-    def func(M):
-        return (R * V**2 * (L/2 + sign * np.sqrt((2 * M - L)**2 / 4 - M**2 / K**2))**2 /
-               (R**2 * L**2 + W**2 * M**4 * (1 - K**2) / K**4))
-    func2 = lambda M: P - func(M)
-    coil2 = lambda M: L/2 - np.sqrt((2 * M - L)**2 / 4 - M**2 / K**2)
-    shift = lambda M: np.arctan(W * (1 - K**2) * M**2 / (R * L * K**2))
-    mmax = lambda: L * K / (2 + 2 * K)
-    sign = 1 if func(mmax()) < P else -1
-    m = bisect(func2, 0, mmax())
-    if np.abs(func2(m)) > .1: m = np.nan
-    L2 = coil2(m)
-    L1 = L - L2
-    return np.array([ -m, L2, L1 ]) * W if flag else shift(m) 
-
-
-def lmatch(ZS, ZL):
-    """
-    ZS <---+---X2--< ZL
-           X1   
-    """
-    RS, XS = ZS.real, ZS.imag
-    RL, XL = ZL.real, ZL.imag
-    QS = RS / RL - 1 + XS**2 / (RS * RL)
-    Q = np.sqrt(QS)
-    X1 = (XS + np.array([1, -1]) * Q * RS) / (RS / RL - 1)
-    X2 = -(XL + np.array([1, -1]) * Q * RL)
-    return np.array([X1, X2]).T
-
-
-def component(x, f, precision=5):
-    if np.isinf(x) or np.isnan(x) or x == 0: return '-'
-    assert(x.imag == 0)
-    f = f * 1e6
-    w = 2 * np.pi * f
-    x = 1 / (w * x) if x < 0 else x / w
-    UNITS = 'FH'
-    SUFFIX = ["f", "p", "n", "u", "m", "", "k", "M", "G"]
-    exp = np.floor(np.log10(np.abs(x)))
-    mant = np.round(x / 10**exp, precision-1)
-    p = np.int(exp // 3)
-    value = (mant * 10**exp) / 10**(3 * p)
-    if p - 4 >= 0 or p - 4 < -len(SUFFIX):
-        return "%7.2g%s" % (np.abs(x), UNITS[0 if x < 0 else 1])
-    else:
-        return "%6.4g%s%s" % (np.abs(value), SUFFIX[p-4], UNITS[0 if x < 0 else 1])
-
-
-def pishift(theta, r1, r2):
-    x1, x2, x3 = teeshift(theta, 1/r1, 1/r2)
-    return -1/x1, -1/x2, -1/x3
-
-
-def teeshift(theta, r1, r2):
-    theta = np.deg2rad(theta)
-    zo = np.sqrt(np.abs(r1 * r2))
-    x1 = np.sign(r1) * (zo - np.abs(r1) * np.cos(theta)) / np.sin(theta)
-    x2 = np.sign(r1) * -zo / np.sin(theta)
-    x3 = np.sign(r1) * (zo - np.abs(r2) * np.cos(theta)) / np.sin(theta)
-    return x1, x2, x3
-
-
-def watts(v):
-    return np.abs(v[1])**2 * (v[0]/v[1]).real
-
-
-def pinet(v, x1, x2, x3):
-    y1 = 1 / x1
-    y3 = 1 / x3
-    v = multiply([[1, 0], [-1j*y1, 1]], v)  # shunt
-    v = multiply([[1, 1j*x2], [0, 1]], v)   # series
-    v = multiply([[1, 0], [-1j*y3, 1]], v)  # shunt
-    return v
-
-
-def teenet(v, x1, x2, x3):
-    y2 = 1 / x2
-    v = multiply([[1, 1j*x1], [0, 1]], v)   # series
-    v = multiply([[1, 0], [-1j*y2, 1]], v)  # shunt
-    v = multiply([[1, 1j*x3], [0, 1]], v)   # series
-    return v
-
-
-def lmatchnet(v, x, reverse=False):
-    y = 1 / np.array(x)
-    if reverse:
-        v = multiply([[1, 1j*x[1]], [0, 1]], v)   # series
-        v = multiply([[1, 0], [-1j*y[0], 1]], v)  # shunt
-    else:
-        v = multiply([[1, 0], [-1j*y[0], 1]], v)  # shunt
-        v = multiply([[1, 1j*x[1]], [0, 1]], v)   # series
-    return v
-                    
-
-
-###############################################
+#################################
+# directional antenna routines
+#################################
 
 def solve(ei, ii, data):
 
     print("! MHZ LINE   POWER               ZA        LMATCH                  ZIN        ELINE                    ", end="")
     print("PI                          TEE              PHASOR            ZOUT         EOUT      ", end="")
-    if data.get("shunt"):
+    if data.get("shunt1") or data.get("shunt2"):
         print("  SHUNTPH /     N          ZFEED         EFEED      ", end="")
     print()
 
@@ -412,11 +426,11 @@ def solve(ei, ii, data):
     # acu
 
     feede_common = np.sqrt(data["power"] * data["output"])
-    acuz = [ np.sign(w) * data["feed"] for w in power ]
     divz = np.array([ feede_common**2 / w for w in power ])
+    acuz = [ np.sign(w) * data["feed"] for w in power ]
     if data.get("gehrke"):
         acuz = divz
-    if data.get("shunt"):
+    if data.get("shunt1") or data.get("shunt2"):
         divz = acuz
 
     # all four posible ACU l-match networks
@@ -441,16 +455,30 @@ def solve(ei, ii, data):
             print_solution(line=line, zi=zi, ref=ref, net=net, neti=neti, divz=divz, data=data)
 
 
-
-def _assert(condition):
-    if not condition:
-        print(" ?!", end="")
-
 def print_solution(line, zi, ref, net, neti, divz, data):
     n = len(line)
-    adjust = [0] * n
     power = [ watts(v) for v in line ]
     frequency = data["frequency"]
+    L = data["l"]
+    K = data["k"] 
+
+    adjust = [0] * n
+    if data.get("shunt1") or data.get("shunt2"):
+        V = np.sqrt(data["power"] * data["output"])
+        if data.get("shunt2"):
+            if np.argmax(power) != ref: return
+            V = np.sqrt(power[ref] * divz[ref])
+        shunt = [0] * n
+        def trans(L1, P, R):
+            v1 = [ np.sqrt(R * P), np.sqrt(P / R) ]
+            v2 = shuntdivider(v1, L1=L1, L=L, F=frequency, K=K)
+            return np.abs(v2[0]), np.angle(v2[0]) - np.angle(v1[0])
+
+        for i in range(n):
+            volts = lambda L1: V - trans(L1, P=power[i], R=divz[i])[0]
+            shunt[i] = bisect(volts, 1e-10, L)
+            res = trans(L1=shunt[i], P=power[i], R=divz[i])
+            adjust[i] = res[1]
 
     for i, m, reverse in zip(range(n), net, neti > 1):
 
@@ -475,7 +503,7 @@ def print_solution(line, zi, ref, net, neti, divz, data):
         ref_theta = np.angle(line[ref][0])
         if data.get("tee") is not None:
             ref_theta -= np.deg2rad(data.get("tee"))
-        if data.get("shunt"):
+        if data.get("shunt1") or data.get("shunt2"):
             ref_theta -= adjust[i] - adjust[ref]
         theta = np.rad2deg(np.angle(line[i][0]) - ref_theta)
         theta = np.mod(theta + 180, 360) - 180
@@ -506,17 +534,13 @@ def print_solution(line, zi, ref, net, neti, divz, data):
         print(' {:14.2f}'.format(v[0] / v[1]), end="")
         print(' {:9.4f} {:8.3f}'.format(np.abs(v[0]), np.rad2deg(np.angle(v[0]))), end="")
 
-        if data.get("shunt"):
-            pass
-            # x = shuntmatch(P=watts(line[i]), R=linez[i], V=feede_common, L=data["l"], F=frequency*1e6, K=data["k"], flag=1)
-            # v = teenet(v, *x)
-            # print(' {:8.3f}'.format(np.rad2deg(-adjust[i])), end="")
-            # print(' / {:5.3f}'.format(np.sqrt(x[1] / (x[1] + x[2]))), end="")
-            # # if not data.get("direct") or ref != i:
-            # # else: print('        - /     -', end="")
-            # zout = v[0] / v[1]
-            # print(' {:14.2f} '.format(zout), end="")
-            # print(' {:9.4f} {:8.3f}'.format(np.abs(v[0]), np.rad2deg(np.angle(v[0]))), end="")
+        if data.get("shunt1") or data.get("shunt2"):
+            v = shuntdivider(v, L1=shunt[i], L=L, F=frequency, K=K)
+            print(' {:8.3f}'.format(np.rad2deg(-adjust[i])), end="")
+            print(' / {:5.3f}'.format(np.sqrt(shunt[i] / L)), end="")
+            res = v[0] / v[1]
+            print(' {:14.2f} '.format(res), end="")
+            print(' {:9.4f} {:8.3f}'.format(np.abs(v[0]), np.rad2deg(np.angle(v[0]))), end="")
 
         print()
 
@@ -525,6 +549,4 @@ if __name__ == "__main__":
     import sys
     np.seterr(divide='ignore', invalid='ignore')
     main(*sys.argv[1:])
-
-            
 
