@@ -276,10 +276,12 @@ def lmatchnet(v, x, reverse=False):
 
 def shuntdivider(v, L1, L, K, F=0):
     w = 2 * np.pi * F * 1e6 if F else 1
-    L1 = w * L1
-    L2 = w * L - L1
+    L2 = L - L1
+    x1 = w * L1
+    x2 = w * L2
     M = K * np.sqrt(L1 * L2)
-    return teenet(v, -M, L1 + M, L2 + M)
+    xm = w * M
+    return teenet(v, -xm, x1 + xm, x2 + xm)
 
 
 #################################
