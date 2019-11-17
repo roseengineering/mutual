@@ -137,7 +137,7 @@ Solve the matching network for a 4-square, quarter-wave spacing array using the 
 
 { run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 0,65ft -el 65ft,0 -el 65ft,65ft -current 1,-j,-j,-1 -gehrke -tline1 50/100,50/100,50/100,50/100 -tie 2,3") }
 
-Solve the matching network for a 2-element, quarter-wave spacing array using the K2BT method.  (Note, this method already provides a direct connection).
+Solve the matching network for a 2-element, quarter-wave spacing array using the K2BT method.
 
 { run("mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -gehrke") }
 

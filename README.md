@@ -644,7 +644,7 @@ $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 0,65ft -el 65ft,0 -el 6
 ```
 
 
-Solve the matching network for a 2-element, quarter-wave spacing array using the K2BT method.  (Note, this method already provides a direct connection).
+Solve the matching network for a 2-element, quarter-wave spacing array using the K2BT method.
 
 
 ```
