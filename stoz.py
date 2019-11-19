@@ -1,4 +1,7 @@
 
+# convert s-parameters to z-parameters
+# $ python stoz.py <filename>.s2p
+
 import sys
 import skrf as rf
 
@@ -12,7 +15,6 @@ def main(filename):
             if i > 0 and i % n == 0: print("\n        ", end="")
             print(' {:8.4f} {:8.4f}'.format(x.real, x.imag), end="")
         print()
-
 
 main(*sys.argv[1:])
 
