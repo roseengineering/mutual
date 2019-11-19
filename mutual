@@ -301,7 +301,7 @@ def print_drive(zij, data):
             x = to_complex(x, f=frequency, vf=data["vf"])
             ei[i], ii[i] = multiply(tline(np.rad2deg(np.angle(x)), zo=np.abs(x)), [ei[i], ii[i]])
 
-    if data.get("gehrke") or data.get("tee") is not None or data.get("shunt1") or data.get("shunt2"): 
+    if data.get("gehrke") or data.get("tee") is not None or data.get("shunt"):
         solve(ei, ii, data)
     else:
         zi = ei / ii
@@ -329,10 +329,8 @@ def main(*args):
             kw["gehrke"] = True
         elif opt == '-z':
             kw["z"] = [ np.complex(x) for x in args.pop(0).split(',') ]
-        elif opt == '-shunt1':
-            kw["shunt1"] = True
-        elif opt == '-shunt2':
-            kw["shunt2"] = True
+        elif opt == '-shunt':
+            kw["shunt"] = True
         elif opt == '-tee':
             kw["tee"] = np.double(args.pop(0))
         elif opt == '-freq':
@@ -405,7 +403,7 @@ def solve(ei, ii, data):
 
     print("! MHZ LINE   POWER               ZA        LMATCH                  ZIN        ELINE                    ", end="")
     print("PI                          TEE              PHASOR            ZOUT         EOUT      ", end="")
-    if data.get("shunt1") or data.get("shunt2"):
+    if data.get("shunt"):
         print("  SHUNTPH /       L1          ZFEED         EFEED      ", end="")
     print()
 
@@ -432,7 +430,7 @@ def solve(ei, ii, data):
     acuz = [ np.sign(w) * data["feed"] for w in power ]
     if data.get("gehrke"):
         acuz = divz
-    if data.get("shunt1") or data.get("shunt2"):
+    if data.get("shunt"):
         divz = acuz
 
     # all four posible ACU l-match networks
@@ -465,17 +463,14 @@ def print_solution(line, zi, ref, net, neti, divz, data):
     K = data["k"] 
 
     adjust = [0] * n
-    if data.get("shunt1") or data.get("shunt2"):
-        V = np.sqrt(data["power"] * data["output"])
-        if data.get("shunt2"):
-            if np.argmax(power) != ref: return
-            V = np.sqrt(power[ref] * divz[ref])
+    if data.get("shunt"):
+        if np.argmax(power) != ref: return
+        V = np.sqrt(power[ref] * divz[ref])
         shunt = [0] * n
         def trans(L1, P, R):
             v1 = [ np.sqrt(R * P), np.sqrt(P / R) ]
             v2 = shuntdivider(v1, L1=L1, L=L, F=frequency, K=K)
             return np.abs(v2[0]), np.angle(v2[0]) - np.angle(v1[0])
-
         for i in range(n):
             volts = lambda L1: V - trans(L1, P=power[i], R=divz[i])[0]
             shunt[i] = bisect(volts, 1e-10, L)
@@ -505,7 +500,7 @@ def print_solution(line, zi, ref, net, neti, divz, data):
         ref_theta = np.angle(line[ref][0])
         if data.get("tee") is not None:
             ref_theta -= np.deg2rad(data.get("tee"))
-        if data.get("shunt1") or data.get("shunt2"):
+        if data.get("shunt"):
             ref_theta -= adjust[i] - adjust[ref]
         theta = np.rad2deg(np.angle(line[i][0]) - ref_theta)
         theta = np.mod(theta + 180, 360) - 180
@@ -536,11 +531,10 @@ def print_solution(line, zi, ref, net, neti, divz, data):
         print(' {:14.2f}'.format(v[0] / v[1]), end="")
         print(' {:9.4f} {:8.3f}'.format(np.abs(v[0]), np.rad2deg(np.angle(v[0]))), end="")
 
-        if data.get("shunt1") or data.get("shunt2"):
+        if data.get("shunt"):
             v = shuntdivider(v, L1=shunt[i], L=L, F=frequency, K=K)
             print(' {:8.3f}'.format(np.rad2deg(-adjust[i])), end="")
             print(' /', end="")
-            # print(' {:8.3f}'.format(np.sqrt(shunt[i] / L)), end="")
             print(' {:>8s}'.format(component(shunt[i] * 2 * np.pi * frequency * 1e6, frequency)), end="")
             res = v[0] / v[1]
             print(' {:14.2f} '.format(res), end="")
