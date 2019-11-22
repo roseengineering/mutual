@@ -12,6 +12,10 @@ $ {command}
 ```
 """
 
+# -finite       : simulate using a Sommerfeld-Norton finite ground rather than a perfect one
+# -conductivity : conductivity in S/m of a finite ground, by default .005 or average ground
+# -permittivity : permittivity of a finite ground, by default 13 or average ground
+
 print(f"""
 
 mutual
@@ -33,33 +37,44 @@ Command Line
 The program takes the following command line options:
 
 ```
--freq      : simulation frequency (or frequencies) in megahertz 
--loss      : vertical antenna resistive loss
--load      : vertical antenna base loading impedance
--diam      : vertical antenna diameter
--height    : vertical antenna height
--segs      : number of segments to divide the simulated vertical into
--autoload  : automatically base load the element vertical antenna
--el        : x,y location of a vertical antenna element
--current   : list of antenna elements currents j or / complex notation
--tline1    : transmision lines from antenna to antenna tuning unit (ATU)
--tline2    : transmision lines from antenna tuning unit (ATU) to phaser
--vf        : velocity factor of the transmission line if angle given in feet or meters
--k         : coefficient of coupling for shunt method, by default .25
--l         : inductance of shunt method power divider inductor, by default 25uH
--tie       : list of lines to tie together
--debug     : show current error norm when simulating the array and other information
--power     : transmitter power output, default 100 watts
--output    : transmitter coax feedline impedance, default 50 ohms
--feed      : ATU to phasor feedline impedance, default 50 ohms
--z         : set driving impedance of the array instead of simulating
--gehrke    : solve phase budget using K2BT method
--shunt     : solve phase budget using shunt, or ohms law, method 
--tee       : solve phase budget using tee network method, must pass reference phase shift
+-freq         : simulation frequency (or frequencies) in megahertz 
+-loss         : vertical antenna resistive loss
+-load         : vertical antenna base loading impedance
+-diam         : vertical antenna diameter
+-height       : vertical antenna height
+-segments     : number of segments to divide the simulated vertical into
+-autoload     : automatically base load the element vertical antenna
+-el           : x,y location of a vertical antenna element
+-current      : list of antenna elements currents j or "/" complex notation
+-debug        : show current error norm when simulating the array and other information
+
+-z            : set driving impedance of the array instead of simulating
+-tline1       : transmision lines from antenna to antenna tuning unit (ATU)
+-tline2       : transmision lines from antenna tuning unit (ATU) to phaser
+-vf           : velocity factor of the transmission line if angle given in feet or meters
+-k            : coefficient of coupling for shunt method, by default .25
+-l            : inductance of shunt method power divider inductor, by default 25uH
+-tie          : list of lines to tie together
+-power        : transmitter power output, by default 100 watts
+-output       : transmitter coax feedline impedance, by default 50 ohms
+-feed         : ATU to phasor feedline impedance, by default 50 ohms
+-gehrke       : solve phase budget using K2BT method
+-shunt        : solve phase budget using shunt, or ohms law, method 
+-tee          : solve phase budget using tee network method, must pass reference phase shift
 ```
 
-Note the -diam, -height, and -el options can take the following suffix modifiers:
+Note, the -diam, -height, and -el options can take the following suffix modifiers:
 cm, mm, ft, and in.  Otherwise distance is provided in meters.
+Also options -tline1 and
+-tline2 can take m or ft as angle units using "/" notation besides degrees.  The magnitude
+is taken as the characteristic impedance of the transmission line.
+
+stoz.py
+--------
+
+The python script stoz.py converts s-parameters of an arbitrary size into z-parameters.
+It is intended for use when measuring an antenna array using s-parameters. Z12 and Z21
+are not swapped with s2p files.
 
 Examples
 --------

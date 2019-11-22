@@ -8,6 +8,8 @@ defaults = {
     "losses": 0,
     "loading": 0,
     "segments": 21,
+#   "conductivity": .005,
+#   "permittivity": 13, 
     "vf": 0.66,
     "k": 0.25,
     "l": 25e-6,
@@ -61,16 +63,24 @@ def generate_input(data, voltages):
     losses = data["losses"]
     loading = data["loading"]
     segments = data["segments"]
+#   permittivity = data["permittivity"]
+#   conductivity = data["conductivity"]
+
     text = ""
     n = len(element)
     for i in range(n):
         tag = i + 1
-        fmt = "GW {tag} {segments} {x:g} {y:g} 0 {x:g} {y:g} {height} {radius}\n"
+        fmt = "GW {tag} {segments} {x:g} {y:g} 0 {x:g} {y:g} {height:g} {radius:g}\n"
         text += fmt.format(tag=tag, segments=segments, 
                            x=element[i][0], y=element[i][1], 
                            height=height, radius=radius)
-    text += "GE 1\n"  # ground plane is present
-    text += "GN 1\n"  # perfect ground
+    text += "GE 1\n"        # ground plane present
+
+#   if data.get("finite"):  
+#   text += "GN 2 0 0 0 {:g} {:g}\n".format(permittivity, conductivity)  # sommerfeld finite ground
+#   else:
+
+    text += "GN 1\n"   # perfect ground
     text += "FR 0 0 0 0 {:f}\n".format(frequency)
     for i in range(n):
         tag = i + 1
@@ -297,8 +307,8 @@ def print_drive(zij, data):
     # tlines from antenna to ATU
 
     if data.get("tline1"):
-        for i, x in enumerate(data["tline1"]):
-            x = to_complex(x, f=frequency, vf=data["vf"])
+        for i in range(len(data["tline1"])):
+            x = to_complex(data["tline1"][i], f=frequency, vf=data["vf"])
             ei[i], ii[i] = multiply(tline(np.rad2deg(np.angle(x)), zo=np.abs(x)), [ei[i], ii[i]])
 
     if data.get("gehrke") or data.get("tee") is not None or data.get("shunt"):
@@ -339,7 +349,13 @@ def main(*args):
             kw["losses"] = np.double(args.pop(0))
         elif opt == '-load':
             kw["loading"] = np.double(args.pop(0))
-        elif opt == '-segs':
+        # elif opt == '-conductivity':
+        #     kw["conductivity"] = np.double(args.pop(0))
+        # elif opt == '-permittivity':
+        #     kw["permittivity"] = np.double(args.pop(0))
+        # elif opt == '-finite':
+        #     kw["finite"] = True
+        elif opt == '-segments':
             kw["segments"] = np.int(args.pop(0))
         elif opt == '-height':
             kw["height"] = to_distance(args.pop(0))
