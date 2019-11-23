@@ -107,7 +107,7 @@ def error_norm(zij, data):
     ii = np.ones(n)
     ei = multiply(zij, ii)
     err = ii - run_nec(generate_input(data, ei))
-    print('! error norm       = {:g}'.format(np.linalg.norm(err)))
+    print('! Zij error norm   = {:g}'.format(np.linalg.norm(err)))
 
 
 def print_mutual(zij, data):
@@ -318,8 +318,8 @@ def main(*args):
 
     while args:
         opt = args.pop(0)
-        if opt == '-debug':
-            kw["debug"] = True
+        if False:
+            pass
         elif opt == '-autoload':
             kw["autoload"] = True
         elif opt == '-freq':
@@ -379,11 +379,7 @@ def main(*args):
             if kw.get('autoload'):
                 autoload(kw)
             zij = mutual(kw)
-
-            # calculate error norm
-
-            if kw.get('debug'):
-                error_norm(zij, kw)
+            error_norm(zij, kw)
 
         # display results
 
