@@ -28,6 +28,7 @@ The program takes the following command line options:
 -autoload      : automatically base load the element vertical antenna
 -el            : x,y location of a vertical antenna element
 -current       : list of antenna elements currents j or "/" complex notation
+-debug         : show current error norm of simulated mutual impedance matrix
 
 -z             : set driving impedance of the array instead of simulating
 -tline1        : transmision lines from antenna to antenna tuning unit (ATU)
@@ -67,9 +68,8 @@ A 2-element, quarter-wave spacing array.
 ```
 $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0
 ! MHZ Z RI R 1
-! Zij error norm   = 5.61683e-07
-3.8       35.7669  +1.6576j,  19.1266 -15.6089j
-          19.1266 -15.6089j,  35.7669  +1.6576j
+3.8       35.7669  +1.6576j   19.1266 -15.6089j
+          19.1266 -15.6089j   35.7669  +1.6576j
 ```
 
 
@@ -79,10 +79,9 @@ A 3-element in-line, quarter wave spacing array.
 ```
 $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -el 130ft,0
 ! MHZ Z RI R 1
-! Zij error norm   = 3.91496e-05
-3.8       35.9925  +1.8006j,  18.9642 -15.2575j,  -7.9513 -14.3990j
-          18.9642 -15.2575j,  35.2306  +1.4930j,  18.9642 -15.2575j
-          -7.9513 -14.3990j,  18.9642 -15.2575j,  35.9925  +1.8006j
+3.8       35.9925  +1.8006j   18.9642 -15.2575j   -7.9513 -14.3990j
+          18.9642 -15.2575j   35.2306  +1.4930j   18.9642 -15.2575j
+          -7.9513 -14.3990j   18.9642 -15.2575j   35.9925  +1.8006j
 ```
 
 
@@ -92,9 +91,8 @@ A 2-element, half-wave spacing array.
 ```
 $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 130ft,0
 ! MHZ Z RI R 1
-! Zij error norm   = 6.92484e-06
-3.8       36.5281  +1.9652j,  -7.4153 -14.2349j
-          -7.4153 -14.2349j,  36.5281  +1.9652j
+3.8       36.5281  +1.9652j   -7.4153 -14.2349j
+          -7.4153 -14.2349j   36.5281  +1.9652j
 ```
 
 
@@ -104,10 +102,9 @@ A triangular array, 0.289 wave spacing array.
 ```
 $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,-11.41 -el 0,11.41 -el 19.74,0
 ! MHZ Z RI R 1
-! Zij error norm   = 5.90647e-05
-3.8       35.3457  +1.9629j,  14.1233 -17.6202j,  14.1533 -17.6084j
-          14.1233 -17.6202j,  35.3457  +1.9629j,  14.1533 -17.6084j
-          14.1533 -17.6084j,  14.1533 -17.6084j,  35.3438  +1.9623j
+3.8       35.3457  +1.9629j   14.1233 -17.6202j   14.1533 -17.6084j
+          14.1233 -17.6202j   35.3457  +1.9629j   14.1533 -17.6084j
+          14.1533 -17.6084j   14.1533 -17.6084j   35.3438  +1.9623j
 ```
 
 
@@ -117,11 +114,10 @@ A 4-square array, quarter-wave spacing array.
 ```
 $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -el 0,65ft -el 65ft,65ft
 ! MHZ Z RI R 1
-! Zij error norm   = 8.49444e-05
-3.8       35.0074  +1.8377j,  18.2488 -15.2970j,  18.2488 -15.2970j,   5.7209 -19.4782j
-          18.2488 -15.2970j,  35.0074  +1.8377j,   5.7209 -19.4782j,  18.2488 -15.2970j
-          18.2488 -15.2970j,   5.7209 -19.4782j,  35.0074  +1.8377j,  18.2488 -15.2970j
-           5.7209 -19.4782j,  18.2488 -15.2970j,  18.2488 -15.2970j,  35.0074  +1.8377j
+3.8       35.0074  +1.8377j   18.2488 -15.2970j   18.2488 -15.2970j    5.7209 -19.4782j
+          18.2488 -15.2970j   35.0074  +1.8377j    5.7209 -19.4782j   18.2488 -15.2970j
+          18.2488 -15.2970j    5.7209 -19.4782j   35.0074  +1.8377j   18.2488 -15.2970j
+           5.7209 -19.4782j   18.2488 -15.2970j   18.2488 -15.2970j   35.0074  +1.8377j
 ```
 
 
@@ -131,11 +127,10 @@ A 4-square array, 1/8-wave spacing array.
 ```
 $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 32ft,0 -el 0,32ft -el 32ft,32ft
 ! MHZ Z RI R 1
-! Zij error norm   = 0.000739083
-3.8       36.0279  -0.8266j,  31.6374  -4.0901j,  31.6374  -4.0901j,  27.5220 -10.7118j
-          31.6374  -4.0901j,  36.0279  -0.8266j,  27.5220 -10.7118j,  31.6374  -4.0901j
-          31.6374  -4.0901j,  27.5220 -10.7118j,  36.0279  -0.8266j,  31.6374  -4.0901j
-          27.5220 -10.7118j,  31.6374  -4.0901j,  31.6374  -4.0901j,  36.0279  -0.8266j
+3.8       36.0279  -0.8266j   31.6374  -4.0901j   31.6374  -4.0901j   27.5220 -10.7118j
+          31.6374  -4.0901j   36.0279  -0.8266j   27.5220 -10.7118j   31.6374  -4.0901j
+          31.6374  -4.0901j   27.5220 -10.7118j   36.0279  -0.8266j   31.6374  -4.0901j
+          27.5220 -10.7118j   31.6374  -4.0901j   31.6374  -4.0901j   36.0279  -0.8266j
 ```
 
 
@@ -146,9 +141,8 @@ W7EL's design in August 1979 QST.  A ground loss of 9 ohms was assumed.
 ```
 $ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0
 ! MHZ Z RI R 1
-! Zij error norm   = 1.06683e-05
-7.1       44.5856  +1.0031j,  18.6475 -15.8831j
-          18.6475 -15.8831j,  44.5856  +1.0031j
+7.1       44.5856  +1.0031j   18.6475 -15.8831j
+          18.6475 -15.8831j   44.5856  +1.0031j
 ```
 
 
@@ -158,18 +152,14 @@ The Orr design above but for multiple frequencies.
 ```
 $ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.0,7.1,7.2,7.3 -el 0,0 -el 35.14ft,0
 ! MHZ Z RI R 1
-! Zij error norm   = 1.68404e-05
-7         43.1294  -7.4635j,  18.3324 -15.0066j
-          18.3324 -15.0066j,  43.1294  -7.4635j
-! Zij error norm   = 1.06683e-05
-7.1       44.5856  +1.0031j,  18.6475 -15.8831j
-          18.6475 -15.8831j,  44.5856  +1.0031j
-! Zij error norm   = 1.69522e-05
-7.2       46.0994  +9.4583j,  18.9457 -16.8046j
-          18.9457 -16.8046j,  46.0994  +9.4583j
-! Zij error norm   = 4.24325e-05
-7.3       47.6754 +17.9092j,  19.2256 -17.7731j
-          19.2256 -17.7731j,  47.6754 +17.9092j
+7         43.1294  -7.4635j   18.3324 -15.0066j
+          18.3324 -15.0066j   43.1294  -7.4635j
+7.1       44.5856  +1.0031j   18.6475 -15.8831j
+          18.6475 -15.8831j   44.5856  +1.0031j
+7.2       46.0994  +9.4583j   18.9457 -16.8046j
+          18.9457 -16.8046j   46.0994  +9.4583j
+7.3       47.6754 +17.9092j   19.2256 -17.7731j
+          19.2256 -17.7731j   47.6754 +17.9092j
 ```
 
 
@@ -179,8 +169,7 @@ The Orr design above but solving with element currents using / complex notation.
 ```
 $ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -current 1,1/-90
 ! MHZ Z RI R 1
-! Zij error norm   = 1.06683e-05
-7.1       28.7025 -17.6445j,  60.4687 +19.6506j
+7.1       28.7025 -17.6445j   60.4687 +19.6506j
 ! E in MA notation =  33.6922 -31.5805,  63.5816 -71.9973
 ! I in MA notation =   1.0000   0.0000,   1.0000 -90.0000
 ! Z in parallel    =  23.2134  -6.1621j
@@ -193,8 +182,7 @@ $ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -curr
 ```
 $ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -current 1,-j
 ! MHZ Z RI R 1
-! Zij error norm   = 1.06683e-05
-7.1       28.7025 -17.6445j,  60.4687 +19.6506j
+7.1       28.7025 -17.6445j   60.4687 +19.6506j
 ! E in MA notation =  33.6922 -31.5805,  63.5816 -71.9973
 ! I in MA notation =   1.0000   0.0000,   1.0000 -90.0000
 ! Z in parallel    =  23.2134  -6.1621j
@@ -207,8 +195,7 @@ The Orr design above with the Christman matching transmission lines.
 ```
 $ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -current 1,-j -tline1 75/90.64,75/176.205
 ! MHZ Z RI R 1
-! Zij error norm   = 1.06683e-05
-7.1      145.9568 +86.3022j,  58.5158 +17.5010j
+7.1      145.9568 +86.3022j   58.5158 +17.5010j
 ! E in MA notation =  75.1931  90.2443,  62.0877 103.6418
 ! I in MA notation =   0.4435  59.6491,   1.0166  86.9909
 ! Z in parallel    =  42.3491 +15.6914j
@@ -221,8 +208,7 @@ $ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -curr
 ```
 $ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -current 1,-j -tline1 75/23.19ft,75/45.10ft
 ! MHZ Z RI R 1
-! Zij error norm   = 1.06683e-05
-7.1      149.5243 +85.0540j,  59.1269 +18.2234j
+7.1      149.5243 +85.0540j   59.1269 +18.2234j
 ! E in MA notation =  75.3684  90.4743,  62.5696 105.1006
 ! I in MA notation =   0.4381  60.8418,   1.0113  87.9709
 ! Z in parallel    =  42.8411 +15.9563j
@@ -235,8 +221,7 @@ The Orr design above but with 90 degree transmission lines to the elements for c
 ```
 $ mutual -loss 9 -diam .7in -height 33.4ft -freq 7.1 -el 0,0 -el 35.14ft,0 -current 1,-j -tline1 75/90,75/90
 ! MHZ Z RI R 1
-! Zij error norm   = 1.06683e-05
-7.1      142.2279 +87.4325j,  84.1378 -27.3424j
+7.1      142.2279 +87.4325j   84.1378 -27.3424j
 ! E in MA notation =  75.0000  90.0000,  75.0000  -0.0000
 ! I in MA notation =   0.4492  58.4195,   0.8478  18.0027
 ! Z in parallel    =  63.0489  -1.4184j
@@ -250,9 +235,8 @@ The Orr design above but 20 feet high and "autoloaded".
 $ mutual -loss 9 -diam .7in -height 20ft -freq 7.1 -el 0,0 -el 35.14ft,0 -autoload
 ! MHZ Z RI R 1
 ! autoload vertical base   = 256.2944j
-! Zij error norm   = 5.78795e-06
-7.1       18.6136  -0.0069j,   5.2691  -4.7229j
-           5.2691  -4.7229j,  18.6136  -0.0069j
+7.1       18.6136  -0.0069j    5.2691  -4.7229j
+           5.2691  -4.7229j   18.6136  -0.0069j
 ```
 
 
@@ -262,8 +246,7 @@ The designs from Orr on page 149.  All of which use the Christman matching metho
 ```
 $ mutual -loss 9 -diam .7in -freq 3.6  -height 66.8ft -el 0,0 -el 70.28ft,0 -current 1,-j -tline1 75/46.39ft,75/92.77ft
 ! MHZ Z RI R 1
-! Zij error norm   = 4.27687e-05
-3.6      179.3665 +51.4641j,  66.3997 +29.2578j
+3.6      179.3665 +51.4641j   66.3997 +29.2578j
 ! E in MA notation =  75.4356  90.9908,  70.2012 118.1306
 ! I in MA notation =   0.4043  74.9815,   0.9675  94.3508
 ! Z in parallel    =  48.6640 +19.2737j
@@ -273,8 +256,7 @@ $ mutual -loss 9 -diam .7in -freq 3.6  -height 66.8ft -el 0,0 -el 70.28ft,0 -cur
 ```
 $ mutual -loss 9 -diam .7in -freq 7.1  -height 33.4ft -el 0,0 -el 35.14ft,0 -current 1,-j -tline1 75/23.19ft,75/45.10ft
 ! MHZ Z RI R 1
-! Zij error norm   = 1.06683e-05
-7.1      149.5243 +85.0540j,  59.1269 +18.2234j
+7.1      149.5243 +85.0540j   59.1269 +18.2234j
 ! E in MA notation =  75.3684  90.4743,  62.5696 105.1006
 ! I in MA notation =   0.4381  60.8418,   1.0113  87.9709
 ! Z in parallel    =  42.8411 +15.9563j
@@ -284,8 +266,7 @@ $ mutual -loss 9 -diam .7in -freq 7.1  -height 33.4ft -el 0,0 -el 35.14ft,0 -cur
 ```
 $ mutual -loss 9 -diam .7in -freq 10.1 -height 23.2ft -el 0,0 -el 24.36ft,0 -current 1,-j -tline1 75/16.07ft,75/32.15ft
 ! MHZ Z RI R 1
-! Zij error norm   = 1.65297e-05
-10.1     120.4103 +97.3445j,  58.8678 +14.1678j
+10.1     120.4103 +97.3445j   58.8678 +14.1678j
 ! E in MA notation =  74.9791  89.9803,  60.5585 103.4938
 ! I in MA notation =   0.4842  51.0268,   1.0002  89.9617
 ! Z in parallel    =  41.5647 +15.6262j
@@ -295,8 +276,7 @@ $ mutual -loss 9 -diam .7in -freq 10.1 -height 23.2ft -el 0,0 -el 24.36ft,0 -cur
 ```
 $ mutual -loss 9 -diam .7in -freq 14.1 -height 16.7ft -el 0,0 -el 17.57ft,0 -current 1,-j -tline1 75/11.60ft,75/22.55ft
 ! MHZ Z RI R 1
-! Zij error norm   = 3.54229e-05
-14.1     142.6727 +89.7992j,  58.3616 +16.4840j
+14.1     142.6727 +89.7992j   58.3616 +16.4840j
 ! E in MA notation =  75.2037  90.2424,  61.5930 102.7736
 ! I in MA notation =   0.4461  58.0558,   1.0156  87.0015
 ! Z in parallel    =  42.2217 +15.4461j
@@ -308,8 +288,6 @@ Solve the matching network for a 3-element in-line, quarter-wave spacing array u
 
 ```
 $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -el 130ft,0 -current 1,1/-90,-1 -gehrke
-! MHZ Z RI R 1
-! Zij error norm   = 3.91496e-05
 ! MHZ LINE   POWER               ZA        LMATCH                  ZIN        ELINE                    PI                          TEE              PHASOR            ZOUT         EOUT      
 !
 3.8      1  23.300   28.686-2.7647j  596.1pF /  3.531uH   214.59-0.00j   70.7107  -68.554        -        -        - |        -        -        -    0.000    214.59-0.00j   70.7107  -68.554
@@ -399,8 +377,6 @@ Solve the matching network for a 4-square, quarter-wave spacing array using the 
 
 ```
 $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 0,65ft -el 65ft,0 -el 65ft,65ft -current 1,-j,-j,-1 -gehrke -tline1 50/100,50/100,50/100,50/100 -tie 2,3
-! MHZ Z RI R 1
-! Zij error norm   = 8.49444e-05
 ! MHZ LINE   POWER               ZA        LMATCH                  ZIN        ELINE                    PI                          TEE              PHASOR            ZOUT         EOUT      
 !
 3.8      1  -0.934  -79.817+397.38j  10.53uH /  63.59pF -5354.68-0.00j   70.7107   85.405        -        -        - |        -        -        -    0.000  -5354.68-0.00j   70.7107   85.405
@@ -682,8 +658,6 @@ Solve the matching network for a 2-element, quarter-wave spacing array using the
 
 ```
 $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -gehrke
-! MHZ Z RI R 1
-! Zij error norm   = 5.61683e-07
 ! MHZ LINE   POWER               ZA        LMATCH                  ZIN        ELINE                    PI                          TEE              PHASOR            ZOUT         EOUT      
 !
 3.8      1  28.180   20.158-17.469j  1.078nF /   2.66uH   177.43+0.00j   70.7107  -70.302        -        -        - |        -        -        -    0.000    177.43+0.00j   70.7107  -70.302
@@ -713,8 +687,6 @@ Solve the matching network for a 2-element, quarter-wave spacing array using the
 
 ```
 $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -l 7e-6 -current 1,-j -shunt
-! MHZ Z RI R 1
-! Zij error norm   = 5.61683e-07
 ! MHZ LINE   POWER               ZA        LMATCH                  ZIN        ELINE                    PI                          TEE              PHASOR            ZOUT         EOUT        SHUNTPH /       L1          ZFEED         EFEED      
 !
 3.8      1  28.180   20.158-17.469j  5.934nF /  1.721uH    50.00+0.00j   37.5365  -50.584  3.135uH  906.8pF  3.135uH |  1.254nF  2.267uH  1.254nF   67.478     50.00-0.00j   37.5365 -118.062  -26.225 /  5.192uH   56.63+63.32j    59.9251  -91.837
@@ -736,8 +708,6 @@ Solve the matching network for a 2-element, quarter-wave spacing array using the
 
 ```
 $ mutual -diam .7in -height 62.7ft -freq 3.8 -el 0,0 -el 65ft,0 -current 1,-j -tee 90
-! MHZ Z RI R 1
-! Zij error norm   = 5.61683e-07
 ! MHZ LINE   POWER               ZA        LMATCH                  ZIN        ELINE                    PI                          TEE              PHASOR            ZOUT         EOUT      
 !
 3.8      1  28.180   20.158-17.469j  5.934nF /  1.721uH    50.00+0.00j   37.5365  -50.584  3.945uH  444.7pF  3.945uH |  444.7pF  3.945uH  444.7pF   90.000    177.43-0.00j   70.7107 -140.584

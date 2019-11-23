@@ -14,7 +14,8 @@ defaults = {
     "power": 100,
     "feed": 50,
     "output": 50,
-    "frequencies": [ 3.5 ]
+    "frequencies": [ 3.5 ],
+    "element": []
 }
 
 
@@ -116,7 +117,7 @@ def print_mutual(zij, data):
     print('{:<8g}'.format(frequency), end="")
     for i in range(n):
         if i > 0: print('{:<8s}'.format(''), end="")
-        print(','.join([ ' {:8.4f} {:+8.4f}j'.format(
+        print(' '.join([ ' {:8.4f} {:+8.4f}j'.format(
               zij[i][j].real, zij[i][j].imag) for j in range(n) ]))
 
 
@@ -303,7 +304,7 @@ def print_drive(zij, data):
         zi = ei / ii
         ztot = parallel(zi)
         print('{:<8g}'.format(frequency), end="")
-        print(','.join([ ' {:8.4f} {:+8.4f}j'.format(x.real, x.imag) for x in zi ]))
+        print(' '.join([ ' {:8.4f} {:+8.4f}j'.format(x.real, x.imag) for x in zi ]))
         print('! E in MA notation =', end="")
         print(','.join([ ' {:8.4f} {:8.4f}'.format(np.abs(x), np.rad2deg(np.angle(x))) for x in ei ]))
         print('! I in MA notation =', end="")
@@ -314,12 +315,14 @@ def print_drive(zij, data):
    
 def main(*args):
     args = list(args)
-    kw = { "element": [] }
+    kw = dict(defaults)
 
     while args:
         opt = args.pop(0)
         if False:
             pass
+        elif opt == '-debug':
+            kw["debug"] = True
         elif opt == '-autoload':
             kw["autoload"] = True
         elif opt == '-freq':
@@ -368,8 +371,9 @@ def main(*args):
         else:
             raise ValueError("unknown option:", opt)
 
-    kw = dict(defaults, **kw)
-    print("! MHZ Z RI R 1")
+    if not kw.get("gehrke") and not kw.get("shunt") and kw.get("tee") is None:
+        print("! MHZ Z RI R 1")
+
     for frequency in kw["frequencies"]:
         kw["frequency"] = frequency
 
@@ -379,7 +383,8 @@ def main(*args):
             if kw.get('autoload'):
                 autoload(kw)
             zij = mutual(kw)
-            error_norm(zij, kw)
+            if kw.get("debug"): 
+                error_norm(zij, kw)
 
         # display results
 

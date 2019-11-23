@@ -43,6 +43,7 @@ The program takes the following command line options:
 -autoload      : automatically base load the element vertical antenna
 -el            : x,y location of a vertical antenna element
 -current       : list of antenna elements currents j or "/" complex notation
+-debug         : show current error norm of simulated mutual impedance matrix
 
 -z             : set driving impedance of the array instead of simulating
 -tline1        : transmision lines from antenna to antenna tuning unit (ATU)
