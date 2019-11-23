@@ -4,12 +4,12 @@ import subprocess, tempfile, os
 import numpy as np
 
 defaults = {
-    "diameter": 25 / 1000,
+    "diameter": .025,
     "losses": 0,
     "loading": 0,
     "segments": 21,
-#   "conductivity": .005,
-#   "permittivity": 13, 
+    "conductivity": .005,
+    "permittivity": 13, 
     "vf": 0.66,
     "k": 0.25,
     "l": 25e-6,
@@ -29,6 +29,7 @@ def run_process(text):
     command = 'nec2c -i %s -o /dev/stdout' % name
     with open(name, "wb") as f:
         f.write(text.encode()) 
+    print(text)
     proc = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
     result = proc.stdout.read().decode()
     proc.wait()
@@ -42,16 +43,16 @@ def run_nec(text):
     buf = run_process(text)
     f = iter(buf.splitlines())
     for line in f:
+        print(line)
         data = line.split()
-        if len(data) == 10 and data[0].isdigit() and '.' in line: break
+        if len(data) == 11 and data[0].isdigit() and '.' in line: break
     while True:
         data = line.split() 
         if not len(data): break
-        x = np.complex(np.double(data[6]), np.double(data[7]))
-        if tag != data[1]:
-            im.append(x)
-            tag = data[1]
+        x = np.complex(np.double(data[4]), np.double(data[5]))
+        im.append(x)
         line = next(f)
+    for line in f: print(line)
     return im
 
 
@@ -59,28 +60,32 @@ def generate_input(data, voltages):
     frequency = data["frequency"]
     element = data['element']
     height = data['height']
-    radius = data["diameter"] / 2
+    diameter = data["diameter"]
     losses = data["losses"]
     loading = data["loading"]
     segments = data["segments"]
-#   permittivity = data["permittivity"]
-#   conductivity = data["conductivity"]
+    permittivity = data["permittivity"]
+    conductivity = data["conductivity"]
+    radials = 0 # data["radials"]
+    radial_length = 0 # data.get("radial_length", .3 * 300 / frequency)
+    radial_diam = 0 # data["radial_diam"]
 
     text = ""
     n = len(element)
     for i in range(n):
         tag = i + 1
         fmt = "GW {tag} {segments} {x:g} {y:g} 0 {x:g} {y:g} {height:g} {radius:g}\n"
-        text += fmt.format(tag=tag, segments=segments, 
-                           x=element[i][0], y=element[i][1], 
-                           height=height, radius=radius)
-    text += "GE 1\n"        # ground plane present
+        text += fmt.format(
+                tag=tag, segments=segments, x=element[i][0], y=element[i][1], height=height, radius=diameter / 2)
+    text += "GE 1\n"       # ground plane present
 
-#   if data.get("finite"):  
-#   text += "GN 2 0 0 0 {:g} {:g}\n".format(permittivity, conductivity)  # sommerfeld finite ground
-#   else:
+    if data.get("radials") is not None:  
+        text += "GN 2 {radials} 0 0 {permittivity:g} {conductivity:g} {radial_length:g} {radial_radius:g}\n".format(
+                permittivity=permittivity, conductivity=conductivity, radials=radials, 
+                radial_length=radial_length, radial_radius=radial_diam / 2)
+    else:
+        text += "GN 1\n"   # perfect ground
 
-    text += "GN 1\n"   # perfect ground
     text += "FR 0 0 0 0 {:f}\n".format(frequency)
     for i in range(n):
         tag = i + 1
@@ -304,8 +309,6 @@ def print_drive(zij, data):
     ii = np.array(data["current"])
     ei = multiply(zij, ii)
 
-    # tlines from antenna to ATU
-
     if data.get("tline1"):
         for i in range(len(data["tline1"])):
             x = to_complex(data["tline1"][i], f=frequency, vf=data["vf"])
@@ -329,32 +332,23 @@ def print_drive(zij, data):
 def main(*args):
     args = list(args)
     kw = { "element": [] }
+
     while args:
         opt = args.pop(0)
         if opt == '-debug':
             kw["debug"] = True
         elif opt == '-autoload':
             kw["autoload"] = True
-        elif opt == '-gehrke':
-            kw["gehrke"] = True
-        elif opt == '-z':
-            kw["z"] = [ np.complex(x) for x in args.pop(0).split(',') ]
-        elif opt == '-shunt':
-            kw["shunt"] = True
-        elif opt == '-tee':
-            kw["tee"] = np.double(args.pop(0))
         elif opt == '-freq':
             kw["frequencies"] = [ np.double(x) for x in args.pop(0).split(',') ]
         elif opt == '-loss':
             kw["losses"] = np.double(args.pop(0))
         elif opt == '-load':
             kw["loading"] = np.double(args.pop(0))
-        # elif opt == '-conductivity':
-        #     kw["conductivity"] = np.double(args.pop(0))
-        # elif opt == '-permittivity':
-        #     kw["permittivity"] = np.double(args.pop(0))
-        # elif opt == '-finite':
-        #     kw["finite"] = True
+        elif opt == '-conductivity':
+            kw["conductivity"] = np.double(args.pop(0))
+        elif opt == '-permittivity':
+            kw["permittivity"] = np.double(args.pop(0))
         elif opt == '-segments':
             kw["segments"] = np.int(args.pop(0))
         elif opt == '-height':
@@ -363,6 +357,21 @@ def main(*args):
             kw["diameter"] = to_distance(args.pop(0))
         elif opt == '-el':
             kw["element"].append([ to_distance(x) for x in args.pop(0).split(',') ])
+        elif opt == '-radials':
+            kw["radials"] = np.int(args.pop(0))
+        elif opt == '-radial-diam':
+            kw["radial_diam"] = to_distance(args.pop(0))
+        elif opt == '-radial-length':
+            kw["radial_length"] = to_distance(args.pop(0))
+
+        elif opt == '-gehrke':
+            kw["gehrke"] = True
+        elif opt == '-shunt':
+            kw["shunt"] = True
+        elif opt == '-tee':
+            kw["tee"] = np.double(args.pop(0))
+        elif opt == '-z':
+            kw["z"] = [ np.complex(x) for x in args.pop(0).split(',') ]
         elif opt == '-current':
             kw["current"] = [ to_complex(x) for x in args.pop(0).split(',') ]
         elif opt == '-tie':
@@ -449,7 +458,7 @@ def solve(ei, ii, data):
     if data.get("shunt"):
         divz = acuz
 
-    # all four posible ACU l-match networks
+    # l-match
 
     aculm = [ np.concatenate([ lmatch(zi[i], acuz[i]), lmatch(acuz[i], zi[i]) ]) for i in range(n) ]
     combo = np.array([ [ i // (4 ** (n - k - 1)) % 4 for k in range(n) ] for i in range(4 ** n) ])
