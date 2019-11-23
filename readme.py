@@ -43,11 +43,6 @@ The program takes the following command line options:
 -autoload      : automatically base load the element vertical antenna
 -el            : x,y location of a vertical antenna element
 -current       : list of antenna elements currents j or "/" complex notation
--radials       : run a finite ground simulation 
--radial-diam   : diameter of the radial ground wires
--radial-length : length of the radial ground wires
--conductivity  : conductivity in S/m of a finite ground, by default .005 or average ground
--permittivity  : permittivity of a finite ground, by default 13 or average ground
 -debug         : show current error norm when simulating the array and other information
 
 -z             : set driving impedance of the array instead of simulating

@@ -8,8 +8,6 @@ defaults = {
     "losses": 0,
     "loading": 0,
     "segments": 21,
-    "conductivity": .005,
-    "permittivity": 13, 
     "vf": 0.66,
     "k": 0.25,
     "l": 25e-6,
@@ -29,7 +27,6 @@ def run_process(text):
     command = 'nec2c -i %s -o /dev/stdout' % name
     with open(name, "wb") as f:
         f.write(text.encode()) 
-    print(text)
     proc = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
     result = proc.stdout.read().decode()
     proc.wait()
@@ -43,7 +40,6 @@ def run_nec(text):
     buf = run_process(text)
     f = iter(buf.splitlines())
     for line in f:
-        print(line)
         data = line.split()
         if len(data) == 11 and data[0].isdigit() and '.' in line: break
     while True:
@@ -52,7 +48,6 @@ def run_nec(text):
         x = np.complex(np.double(data[4]), np.double(data[5]))
         im.append(x)
         line = next(f)
-    for line in f: print(line)
     return im
 
 
@@ -64,11 +59,6 @@ def generate_input(data, voltages):
     losses = data["losses"]
     loading = data["loading"]
     segments = data["segments"]
-    permittivity = data["permittivity"]
-    conductivity = data["conductivity"]
-    radials = 0 # data["radials"]
-    radial_length = 0 # data.get("radial_length", .3 * 300 / frequency)
-    radial_diam = 0 # data["radial_diam"]
 
     text = ""
     n = len(element)
@@ -78,14 +68,7 @@ def generate_input(data, voltages):
         text += fmt.format(
                 tag=tag, segments=segments, x=element[i][0], y=element[i][1], height=height, radius=diameter / 2)
     text += "GE 1\n"       # ground plane present
-
-    if data.get("radials") is not None:  
-        text += "GN 2 {radials} 0 0 {permittivity:g} {conductivity:g} {radial_length:g} {radial_radius:g}\n".format(
-                permittivity=permittivity, conductivity=conductivity, radials=radials, 
-                radial_length=radial_length, radial_radius=radial_diam / 2)
-    else:
-        text += "GN 1\n"   # perfect ground
-
+    text += "GN 1\n"   # perfect ground
     text += "FR 0 0 0 0 {:f}\n".format(frequency)
     for i in range(n):
         tag = i + 1
@@ -345,10 +328,6 @@ def main(*args):
             kw["losses"] = np.double(args.pop(0))
         elif opt == '-load':
             kw["loading"] = np.double(args.pop(0))
-        elif opt == '-conductivity':
-            kw["conductivity"] = np.double(args.pop(0))
-        elif opt == '-permittivity':
-            kw["permittivity"] = np.double(args.pop(0))
         elif opt == '-segments':
             kw["segments"] = np.int(args.pop(0))
         elif opt == '-height':
@@ -357,12 +336,6 @@ def main(*args):
             kw["diameter"] = to_distance(args.pop(0))
         elif opt == '-el':
             kw["element"].append([ to_distance(x) for x in args.pop(0).split(',') ])
-        elif opt == '-radials':
-            kw["radials"] = np.int(args.pop(0))
-        elif opt == '-radial-diam':
-            kw["radial_diam"] = to_distance(args.pop(0))
-        elif opt == '-radial-length':
-            kw["radial_length"] = to_distance(args.pop(0))
 
         elif opt == '-gehrke':
             kw["gehrke"] = True
